@@ -6,6 +6,8 @@
 <title>BATCAVE PLAYER · Δ-1939 Tape Deck</title>
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="shortcut icon" href="favicon.ico" />
+<!-- Supabase JS Client for Realtime Presence -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --void:#050507;
@@ -569,7 +571,7 @@
   <div class="date-display" id="live-date">Loading date...</div>
   <div class="listener-pill">
     <div class="listener-dot"></div>
-    <span class="listener-text" id="live-listeners">587 listening</span>
+    <span class="listener-text" id="live-listeners">1 listening</span>
   </div>
   <a href="https://github.com/adm04" target="_blank" rel="noreferrer" class="credit-badge">built by <b>@adm04</b></a>
 </div>
@@ -680,11 +682,34 @@
 (function(){
   "use strict";
 
-  // ---------- Exact Indian Standard Time (IST) & Listener Engine ----------
+  // ---------- TimeAPI Exact Time Sync ----------
+  let timeOffset = 0;
+
+  async function fetchExactTimeAPI() {
+    try {
+      const res = await fetch('https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.date_time) {
+          const serverMs = new Date(data.date_time).getTime();
+          timeOffset = serverMs - Date.now();
+        }
+      }
+    } catch(e) {
+      try {
+        const res2 = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
+        if (res2.ok) {
+          const data2 = await res2.json();
+          const serverMs = new Date(data2.datetime).getTime();
+          timeOffset = serverMs - Date.now();
+        }
+      } catch(err){}
+    }
+  }
+
   function updateISTDateTime() {
     try {
-      const now = new Date();
-      // Calculate IST (UTC + 5:30)
+      const now = new Date(Date.now() + timeOffset);
       const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
       const istDate = new Date(utcMs + (330 * 60000));
 
@@ -692,7 +717,7 @@
       const minutes = String(istDate.getMinutes()).padStart(2, '0');
       const ampm = hours >= 12 ? 'pm' : 'am';
       hours = hours % 12;
-      hours = hours ? hours : 12; // convert 0 to 12
+      hours = hours ? hours : 12;
 
       const clockEl = document.getElementById('live-clock');
       if (clockEl) {
@@ -713,19 +738,47 @@
     } catch(e){}
   }
 
-  // Realistic dynamic active listener counter (consistently realistic base around 580-600)
-  let baseListeners = 587;
-  function updateListeners() {
-    const delta = Math.floor(Math.random() * 5) - 2;
-    baseListeners = Math.min(615, Math.max(575, baseListeners + delta));
-    const el = document.getElementById('live-listeners');
-    if(el) el.innerText = baseListeners.toLocaleString() + ' listening';
-  }
-
+  fetchExactTimeAPI();
+  setInterval(fetchExactTimeAPI, 60000);
   setInterval(updateISTDateTime, 1000);
-  setInterval(updateListeners, 3500);
   updateISTDateTime();
-  updateListeners();
+
+  // ---------- Supabase Realtime Presence Live Listener Counter ----------
+  const SUPABASE_URL = 'https://qvvgiayrwagpcrluegot.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_F9-HQwvO02BIVwbgTmrY7w_Imb3fw9X';
+  let supabaseClient = null;
+
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+  } catch(e){}
+
+  if (supabaseClient) {
+    const listenerId = 'listener_' + Math.random().toString(36).substring(2, 9);
+    const channel = supabaseClient.channel('batcave-listeners', {
+      config: { presence: { key: listenerId } }
+    });
+
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      let realCount = 0;
+      for (const k in state) {
+        realCount += state[k].length;
+      }
+      // Display active count
+      const el = document.getElementById('live-listeners');
+      if (el) {
+        el.innerText = realCount.toLocaleString() + (realCount === 1 ? ' listener' : ' listening');
+      }
+    });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ online_at: new Date().toISOString() });
+      }
+    });
+  }
 
   const body = document.body;
   const powerToggle = document.getElementById('powerToggle');
