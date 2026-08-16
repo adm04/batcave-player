@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
 
 interface HeaderProps {
   listenerCount: number;
@@ -15,14 +16,13 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAbout,
   onOpenArchive,
   onOpenPlaylists,
-  currentPlaylistName,
 }) => {
   const [timeState, setTimeState] = useState<{
     timeStr: string;
     period: string;
     dateStr: string;
   }>({
-    timeStr: '9:16',
+    timeStr: '9:25',
     period: 'pm',
     dateStr: 'SUNDAY, 16 AUGUST · IST',
   });
@@ -75,9 +75,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* TOP LEFT HEADER GROUP (Deluxe Saloon layout) */}
-      <div className="fixed top-4 left-4 sm:top-6 sm:left-8 z-40 flex flex-col gap-1.5 text-slate-100 font-sans pointer-events-auto select-none">
-        {/* Large Digital Time */}
+      {/* TOP LEFT CONTROL GROUP (1-to-1 Deluxe Saloon) */}
+      <div className="fixed top-5 left-5 sm:top-6 sm:left-8 z-40 flex flex-col gap-1.5 text-slate-100 font-sans pointer-events-auto select-none">
+        {/* Digital Clock */}
         <div className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-slate-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
           {timeState.timeStr}
           <span className="text-sm sm:text-base text-slate-300 font-mono font-normal ml-1.5 uppercase">
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
           {timeState.dateStr}
         </div>
 
-        {/* Listener Pill */}
+        {/* Live Listener Count Pill */}
         <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-full bg-black/70 border border-white/15 w-fit backdrop-blur-md shadow-lg">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -101,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
 
-        {/* Built-by Credit Pill */}
+        {/* Creator Badge Pill */}
         <div className="flex items-center gap-2 mt-0.5">
           <a
             href="https://x.com"
@@ -112,53 +112,64 @@ export const Header: React.FC<HeaderProps> = ({
             built by <span className="font-bold">𝕏 @adm04</span>
           </a>
         </div>
+
+        {/* Floating Green WhatsApp Icon */}
+        <a
+          href="https://whatsapp.com"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 w-9 h-9 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center shadow-xl transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+          title="Join WhatsApp Station Community"
+        >
+          <MessageCircle className="w-5 h-5 fill-white text-[#25D366]" />
+        </a>
       </div>
 
-      {/* TOP RIGHT HEADER GROUP (Deluxe Saloon layout) */}
-      <div className="fixed top-4 right-4 sm:top-6 sm:right-8 z-40 flex flex-col items-end gap-2.5 pointer-events-auto select-none max-w-[280px] sm:max-w-xs">
-        {/* Navigation Pill Buttons */}
+      {/* TOP RIGHT CONTROL GROUP (1-to-1 Deluxe Saloon) */}
+      <div className="fixed top-5 right-5 sm:top-6 sm:right-8 z-40 flex flex-col items-end gap-2.5 pointer-events-auto select-none max-w-[280px] sm:max-w-xs">
+        {/* Navigation Buttons */}
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenPlaylists}
-            className="px-4 py-1.5 rounded-full bg-black/70 border border-white/20 text-slate-200 hover:text-amber-glow hover:border-amber-glow text-xs font-mono tracking-wider transition-all backdrop-blur-md shadow-lg cursor-pointer font-semibold"
+            className="px-4 py-1.5 rounded-full bg-black/75 border border-white/20 text-slate-200 hover:text-amber-glow hover:border-amber-glow text-xs font-mono tracking-wider transition-all backdrop-blur-md shadow-lg cursor-pointer font-semibold"
           >
             Playlists
           </button>
           <button
             onClick={onOpenArchive}
-            className="px-4 py-1.5 rounded-full bg-black/70 border border-white/20 text-slate-200 hover:text-white hover:border-white/40 text-xs font-mono tracking-wider transition-all backdrop-blur-md shadow-lg cursor-pointer font-semibold"
+            className="px-4 py-1.5 rounded-full bg-black/75 border border-white/20 text-slate-200 hover:text-white hover:border-white/40 text-xs font-mono tracking-wider transition-all backdrop-blur-md shadow-lg cursor-pointer font-semibold"
           >
-            All tracks
+            All songs
           </button>
         </div>
 
-        {/* Support & Station Info Card */}
-        <div className="p-3.5 rounded-2xl bg-black/75 border border-white/15 backdrop-blur-md text-right shadow-2xl space-y-2">
-          <p className="text-[11px] text-slate-300 leading-snug">
+        {/* Support Card Box */}
+        <div className="p-3.5 rounded-2xl bg-[#0e0e12]/85 border border-white/15 backdrop-blur-md text-right shadow-2xl space-y-2.5">
+          <p className="text-[11px] text-slate-300 leading-snug font-sans">
             Help us keep this station running. Your support means a lot.
           </p>
           <div className="flex items-center justify-end gap-2 text-[10px] font-mono">
             <button
               onClick={onOpenAbout}
-              className="px-3 py-1 rounded-md bg-amber-glow text-black font-bold hover:bg-amber-400 transition-colors shadow"
+              className="px-3 py-1 rounded-md bg-[#e29329] text-black font-bold hover:bg-[#d68519] transition-colors shadow"
             >
-              Support
+              Razorpay
             </button>
             <button
               onClick={onOpenAbout}
-              className="px-3 py-1 rounded-md bg-crimson-bright text-white font-bold hover:bg-crimson transition-colors shadow"
+              className="px-3 py-1 rounded-md bg-[#ffdd00] text-black font-bold hover:bg-[#ebd000] transition-colors shadow"
             >
-              About
+              Ko-fi
             </button>
           </div>
         </div>
 
-        {/* Nostalgia Banner */}
+        {/* Nostalgia Banner Badge */}
         <button
           onClick={onOpenAbout}
-          className="hidden sm:block px-3 py-1.5 rounded-full bg-black/60 border border-white/15 text-[10.5px] text-amber-glow/90 hover:text-amber-glow font-mono tracking-wide backdrop-blur-md transition-all text-right cursor-pointer"
+          className="hidden sm:block px-3.5 py-1.5 rounded-full bg-black/60 border border-white/15 text-[10.5px] text-slate-200 hover:text-amber-glow font-mono tracking-wide backdrop-blur-md transition-all text-right cursor-pointer shadow-md"
         >
-          Click here to enjoy your old school memories ↗
+          Click here to enjoy your old school memories
         </button>
       </div>
     </>
