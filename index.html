@@ -565,8 +565,8 @@
 
 <!-- TOP-LEFT LIVE DATA HEADER -->
 <div class="top-left-group">
-  <div class="clock-display" id="live-clock">9:57<span>pm</span></div>
-  <div class="date-display" id="live-date">Sunday, 16 August · IST</div>
+  <div class="clock-display" id="live-clock">--:--<span>--</span></div>
+  <div class="date-display" id="live-date">Loading date...</div>
   <div class="listener-pill">
     <div class="listener-dot"></div>
     <span class="listener-text" id="live-listeners">587 listening</span>
@@ -680,58 +680,52 @@
 (function(){
   "use strict";
 
-  // ---------- Live Data Updates (WorldTimeAPI sync) ----------
-  let timeOffset = 0;
-
-  async function fetchExactTime() {
+  // ---------- Exact Indian Standard Time (IST) & Listener Engine ----------
+  function updateISTDateTime() {
     try {
-      const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
-      if (res.ok) {
-        const data = await res.json();
-        const serverMs = new Date(data.datetime).getTime();
-        timeOffset = serverMs - Date.now();
-      }
-    } catch(e) {
-      try {
-        const res2 = await fetch('https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata');
-        if (res2.ok) {
-          const data2 = await res2.json();
-          const serverMs = new Date(data2.dateTime).getTime();
-          timeOffset = serverMs - Date.now();
-        }
-      } catch(err){}
-    }
-  }
+      const now = new Date();
+      // Calculate IST (UTC + 5:30)
+      const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istDate = new Date(utcMs + (330 * 60000));
 
-  function updateLiveData() {
-    try {
-      const now = new Date(Date.now() + timeOffset);
-      const optionsTime = { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true };
-      const timeFormatted = new Intl.DateTimeFormat('en-IN', optionsTime).format(now);
-      const timeMatch = timeFormatted.match(/(\d+:\d+)\s*([APap][Mm])/);
-      if (timeMatch) {
-        document.getElementById('live-clock').innerHTML = timeMatch[1] + '<span>' + timeMatch[2].toLowerCase() + '</span>';
+      let hours = istDate.getHours();
+      const minutes = String(istDate.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // convert 0 to 12
+
+      const clockEl = document.getElementById('live-clock');
+      if (clockEl) {
+        clockEl.innerHTML = hours + ':' + minutes + '<span>' + ampm + '</span>';
       }
 
-      const optionsDate = { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' };
-      const dateFormatted = new Intl.DateTimeFormat('en-GB', optionsDate).format(now);
-      document.getElementById('live-date').innerText = dateFormatted + ' · IST';
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+      const dayName = days[istDate.getDay()];
+      const dayNum = istDate.getDate();
+      const monthName = months[istDate.getMonth()];
+
+      const dateEl = document.getElementById('live-date');
+      if (dateEl) {
+        dateEl.innerText = dayName + ', ' + dayNum + ' ' + monthName + ' · IST';
+      }
     } catch(e){}
   }
 
-  let currentListeners = 587;
+  // Realistic dynamic active listener counter (consistently realistic base around 580-600)
+  let baseListeners = 587;
   function updateListeners() {
     const delta = Math.floor(Math.random() * 5) - 2;
-    currentListeners = Math.min(620, Math.max(570, currentListeners + delta));
+    baseListeners = Math.min(615, Math.max(575, baseListeners + delta));
     const el = document.getElementById('live-listeners');
-    if(el) el.innerText = currentListeners.toLocaleString() + ' listening';
+    if(el) el.innerText = baseListeners.toLocaleString() + ' listening';
   }
 
-  fetchExactTime();
-  setInterval(fetchExactTime, 60000);
-  setInterval(updateLiveData, 1000);
-  setInterval(updateListeners, 4000);
-  updateLiveData();
+  setInterval(updateISTDateTime, 1000);
+  setInterval(updateListeners, 3500);
+  updateISTDateTime();
+  updateListeners();
 
   const body = document.body;
   const powerToggle = document.getElementById('powerToggle');
