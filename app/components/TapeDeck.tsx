@@ -382,6 +382,13 @@ export const TapeDeck: React.FC = () => {
   const togglePower = () => {
     const nextPower = !powered;
     setPowered(nextPower);
+    if (typeof document !== 'undefined') {
+      if (nextPower) {
+        document.body.classList.add('powered');
+      } else {
+        document.body.classList.remove('powered');
+      }
+    }
     if (nextPower) {
       getEnsureCtx();
       setStatusText('BOOTING…');
