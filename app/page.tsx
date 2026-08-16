@@ -40,8 +40,8 @@ export default function Home() {
   }, [basePath]);
 
   return (
-    <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden bg-charcoal text-slate-100 antialiased">
-      {/* 1. Immersive Hero Background */}
+    <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-end p-4 pb-6 overflow-x-hidden bg-charcoal text-slate-100 antialiased">
+      {/* 1. Immersive Hero Background (Deluxe Saloon style) */}
       <div
         className="hero-bg -z-20 pointer-events-none"
         style={{ backgroundImage: `url('${bgUrl}')` }}
@@ -65,7 +65,7 @@ export default function Home() {
         }}
       />
 
-      {/* 3. Top Information Row Header */}
+      {/* 3. Top Information Row Header (Exact Deluxe Saloon layout) */}
       <Header
         listenerCount={1284}
         onOpenAbout={() => setIsAboutOpen(true)}
@@ -74,24 +74,14 @@ export default function Home() {
         currentPlaylistName={currentPlaylist.name}
       />
 
-      {/* High Contrast Header Container */}
-      <div className="pt-20 sm:pt-24 pb-4 px-4 text-center z-10 pointer-events-none">
-        <div className="max-w-md mx-auto space-y-1 bg-black/60 p-3.5 sm:p-4 rounded-2xl border border-white/15 backdrop-blur-md shadow-2xl pointer-events-auto">
-          <p className="font-mono text-[10px] sm:text-xs tracking-[0.35em] uppercase text-amber-glow font-bold drop-shadow">
-            GOTHAM SHORTWAVE TRANSMISSION // 1939
-          </p>
-          <h1 className="font-mono text-xl sm:text-3xl font-extrabold tracking-widest text-slate-100 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-            BATCAVE TAPE DECK
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 font-sans italic drop-shadow">
-            "A solitary vigilante shortwave tape deck, running live"
-          </p>
-        </div>
+      {/* 4. Centerpiece Skeuomorphic Tape Deck (Positioned at bottom center of viewport) */}
+      <div className="w-full px-2 sm:px-4 pt-28 sm:pt-32 pb-2 z-20 flex flex-col items-center justify-center max-w-lg mx-auto">
+        <TapeDeck />
       </div>
 
-      {/* 4. Perfectly Centered Centerpiece Retro Tape Deck */}
-      <div className="w-full px-2 sm:px-4 pb-8 z-20 flex flex-col items-center justify-center max-w-xl mx-auto my-auto">
-        <TapeDeck />
+      {/* Footer credit note */}
+      <div className="text-center font-mono text-[10px] tracking-wider text-slate-400/80 z-20 mt-2">
+        contact: batcave.player@gmail.com · Gotham Shortwave Radio
       </div>
 
       {/* Atmospheric Modals */}

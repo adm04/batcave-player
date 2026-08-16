@@ -1,24 +1,37 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Square, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, Square, SkipBack, SkipForward, ExternalLink } from 'lucide-react';
+
+declare global {
+  interface Window {
+    onYouTubeIframeAPIReady?: () => void;
+    YT?: any;
+  }
+}
 
 interface TapeItem {
   id: string;
   name: string;
   cat: string;
-  type?: 'synth' | 'file';
+  artist?: string;
+  film?: string;
+  year?: string;
+  type?: 'synth' | 'youtube' | 'file';
+  videoId?: string;
   url?: string;
+  spotifyUrl?: string;
+  ytMusicUrl?: string;
   gen?: () => () => void;
 }
 
 export const TapeDeck: React.FC = () => {
-  const [powered, setPowered] = useState<boolean>(false);
+  const [powered, setPowered] = useState<boolean>(true);
   const [playing, setPlaying] = useState<boolean>(false);
   const [statusText, setStatusText] = useState<string>('STANDBY');
   const [counterValue, setCounterValue] = useState<number>(0);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [volume, setVolume] = useState<number>(0.7);
+  const [volume, setVolume] = useState<number>(0.8);
 
   // Audio Context & Synth refs
   const ctxRef = useRef<AudioContext | null>(null);
@@ -29,12 +42,13 @@ export const TapeDeck: React.FC = () => {
   const mediaElRef = useRef<HTMLAudioElement | null>(null);
   const counterIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const rafRef = useRef<number | null>(null);
+  const ytPlayerRef = useRef<any>(null);
 
   // Dragging volume ref
   const volKnobRef = useRef<HTMLDivElement>(null);
   const isDraggingVolRef = useRef<boolean>(false);
   const startYRef = useRef<number>(0);
-  const startVolRef = useRef<number>(0.7);
+  const startVolRef = useRef<number>(0.8);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Equalizer DOM ref
@@ -254,9 +268,78 @@ export const TapeDeck: React.FC = () => {
   }, [getEnsureCtx]);
 
   const [playlist, setPlaylist] = useState<TapeItem[]>([
-    { id: 'rain', name: 'Gotham Rain', cat: 'SIDE A · AMBIENT', gen: genRain },
-    { id: 'hum', name: 'Batcave Hum', cat: 'SIDE A · DRONE', gen: genHum },
-    { id: 'synth', name: 'Night Patrol Synth', cat: 'SIDE B · SYNTH', gen: genSynth },
+    {
+      id: 'track-1',
+      name: 'Gotham Rain & Fog Horns',
+      cat: 'SIDE A · GOTHAM NOIR',
+      artist: 'The Midnight Vigilante Band',
+      film: 'BATCAVE SESSIONS',
+      year: '1942',
+      type: 'youtube',
+      videoId: 'jfKfPfyJRdk',
+      spotifyUrl: 'https://open.spotify.com/search/gotham%20noir%20lofi',
+      ytMusicUrl: 'https://music.youtube.com/search?q=gotham+noir+lofi',
+    },
+    {
+      id: 'track-2',
+      name: 'Shadows Along Crime Alley',
+      cat: 'SIDE A · DARK JAZZ',
+      artist: 'Bohren & Der Club of Gore',
+      film: 'SUNSET METROPOLIS',
+      year: '1945',
+      type: 'youtube',
+      videoId: '5qap5aO4i9A',
+      spotifyUrl: 'https://open.spotify.com/search/bohren%20club%20of%20gore',
+      ytMusicUrl: 'https://music.youtube.com/search?q=bohren+and+der+club+of+gore',
+    },
+    {
+      id: 'track-3',
+      name: 'Smoke in Art Deco Lounge',
+      cat: 'SIDE B · METROPOLIS',
+      artist: 'Metropolis Quartet',
+      film: 'GOTHAM FREQUENCY',
+      year: '1939',
+      type: 'youtube',
+      videoId: 'DWcJFNfaw9c',
+      spotifyUrl: 'https://open.spotify.com/search/dark%20jazz%20noir',
+      ytMusicUrl: 'https://music.youtube.com/search?q=dark+jazz+noir',
+    },
+    {
+      id: 'track-4',
+      name: 'Midnight Watchman',
+      cat: 'SIDE B · NOIR SYNDICATE',
+      artist: 'Noir Syndicate',
+      film: 'SPIRED TOWERS',
+      year: '1944',
+      type: 'youtube',
+      videoId: 'TURbeWK2wwg',
+      spotifyUrl: 'https://open.spotify.com/search/noir%20syndicate',
+      ytMusicUrl: 'https://music.youtube.com/search?q=noir+syndicate',
+    },
+    {
+      id: 'synth-1',
+      name: 'Gotham Rain Ambient',
+      cat: 'SYNTH A · WATER & THUNDER',
+      artist: 'Batcave Audio Unit',
+      type: 'synth',
+      gen: genRain,
+    },
+    {
+      id: 'synth-2',
+      name: 'Batcave Hum Drone',
+      cat: 'SYNTH A · LOW FREQUENCY',
+      artist: 'Shortwave 88.4 MHz',
+      type: 'synth',
+      gen: genHum,
+    },
+    {
+      id: 'synth-3',
+      name: 'Night Patrol Synth',
+      cat: 'SYNTH B · NOCTURNAL ARP',
+      artist: 'Vigilante Synthesizers',
+      type: 'synth',
+      gen: genSynth,
+    },
   ]);
 
   const currentTape = playlist[currentIndex] || playlist[0];
@@ -272,6 +355,11 @@ export const TapeDeck: React.FC = () => {
       mediaElRef.current.pause();
       mediaElRef.current.src = '';
       mediaElRef.current = null;
+    }
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+      try {
+        ytPlayerRef.current.pauseVideo();
+      } catch (e) {}
     }
   }, []);
 
@@ -292,12 +380,20 @@ export const TapeDeck: React.FC = () => {
   const startEQ = useCallback(() => {
     if (rafRef.current) return;
     const tick = () => {
-      if (analyserRef.current && dataArrayRef.current && eqContainerRef.current) {
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+      if (eqContainerRef.current) {
         const bars = eqContainerRef.current.children;
-        for (let i = 0; i < bars.length; i++) {
-          const val = dataArrayRef.current[i % dataArrayRef.current.length] / 255;
-          (bars[i] as HTMLElement).style.height = `${Math.max(6, val * 100)}%`;
+        if (analyserRef.current && dataArrayRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+          for (let i = 0; i < bars.length; i++) {
+            const val = dataArrayRef.current[i % dataArrayRef.current.length] / 255;
+            (bars[i] as HTMLElement).style.height = `${Math.max(6, val * 100)}%`;
+          }
+        } else {
+          // Simulated EQ movement when YouTube or audio plays
+          for (let i = 0; i < bars.length; i++) {
+            const val = Math.random() * 0.8 + 0.2;
+            (bars[i] as HTMLElement).style.height = `${Math.max(6, val * 100)}%`;
+          }
         }
       }
       rafRef.current = requestAnimationFrame(tick);
@@ -320,6 +416,11 @@ export const TapeDeck: React.FC = () => {
 
   const pausePlayback = useCallback(() => {
     if (mediaElRef.current) mediaElRef.current.pause();
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+      try {
+        ytPlayerRef.current.pauseVideo();
+      } catch (e) {}
+    }
     setPlaying(false);
     if (typeof document !== 'undefined') {
       document.body.classList.remove('playing');
@@ -331,23 +432,32 @@ export const TapeDeck: React.FC = () => {
 
   const startPlayback = useCallback(() => {
     if (!powered) return;
-    const { ctx, masterGain } = getEnsureCtx();
-    if (!ctx || !masterGain) return;
 
     const tape = playlist[currentIndex];
-    if (tape.type === 'file' && tape.url) {
-      if (!mediaElRef.current) {
-        mediaElRef.current = new Audio(tape.url);
-        mediaElRef.current.loop = true;
-        const src = ctx.createMediaElementSource(mediaElRef.current);
-        src.connect(masterGain);
+    if (tape.type === 'youtube' && tape.videoId) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+        ytPlayerRef.current.loadVideoById(tape.videoId);
       }
-      mediaElRef.current.play();
+    } else if (tape.type === 'file' && tape.url) {
+      const { ctx, masterGain } = getEnsureCtx();
+      if (ctx && masterGain) {
+        if (!mediaElRef.current) {
+          mediaElRef.current = new Audio(tape.url);
+          mediaElRef.current.loop = true;
+          const src = ctx.createMediaElementSource(mediaElRef.current);
+          src.connect(masterGain);
+        }
+        mediaElRef.current.play();
+      }
     } else if (tape.gen) {
-      if (!stopFnRef.current) {
-        stopFnRef.current = tape.gen();
+      const { ctx, masterGain } = getEnsureCtx();
+      if (ctx && masterGain) {
+        if (!stopFnRef.current) {
+          stopFnRef.current = tape.gen();
+        }
       }
     }
+
     setPlaying(true);
     if (typeof document !== 'undefined') {
       document.body.classList.add('playing');
@@ -373,13 +483,83 @@ export const TapeDeck: React.FC = () => {
       if (autoPlay && powered) {
         setTimeout(() => {
           startPlayback();
-        }, 50);
+        }, 80);
       } else {
         pausePlayback();
       }
     },
     [playlist.length, stopCurrentSource, powered, startPlayback, pausePlayback]
   );
+
+  // Next track auto-advance callback
+  const handleNextTrack = useCallback(() => {
+    loadTrack(currentIndex + 1, true);
+  }, [currentIndex, loadTrack]);
+
+  // YouTube IFrame API initialization inside TapeDeck
+  useEffect(() => {
+    const initYt = () => {
+      if (window.YT && window.YT.Player && !ytPlayerRef.current) {
+        ytPlayerRef.current = new window.YT.Player('deck-youtube-container', {
+          height: '100%',
+          width: '100%',
+          videoId: currentTape.videoId || 'jfKfPfyJRdk',
+          playerVars: {
+            autoplay: 0,
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+          },
+          events: {
+            onStateChange: (event: any) => {
+              if (window.YT) {
+                const YTState = window.YT.PlayerState;
+                if (event.data === YTState.PLAYING) {
+                  setPlaying(true);
+                  if (typeof document !== 'undefined') document.body.classList.add('playing');
+                  setStatusText('PLAYING');
+                  startCounter();
+                  startEQ();
+                } else if (event.data === YTState.PAUSED) {
+                  setPlaying(false);
+                  if (typeof document !== 'undefined') document.body.classList.remove('playing');
+                  setStatusText('PAUSED');
+                  stopCounter();
+                  stopEQ();
+                } else if (event.data === YTState.ENDED) {
+                  setPlaying(false);
+                  stopCounter();
+                  stopEQ();
+                  handleNextTrack();
+                }
+              }
+            },
+            onError: () => {
+              setTimeout(() => {
+                handleNextTrack();
+              }, 1000);
+            },
+          },
+        });
+      }
+    };
+
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScript = document.getElementsByTagName('script')[0];
+      if (firstScript && firstScript.parentNode) {
+        firstScript.parentNode.insertBefore(tag, firstScript);
+      } else {
+        document.head.appendChild(tag);
+      }
+      window.onYouTubeIframeAPIReady = () => {
+        initYt();
+      };
+    } else {
+      initYt();
+    }
+  }, [currentTape.videoId, handleNextTrack, startCounter, startEQ, stopCounter, stopEQ]);
 
   const togglePower = () => {
     const nextPower = !powered;
@@ -454,7 +634,7 @@ export const TapeDeck: React.FC = () => {
   const volAngle = -135 + volume * 270;
 
   return (
-    <div className="rig">
+    <div className="rig max-w-[460px] sm:max-w-[500px]">
       <div className="brandline">
         <div className="kicker">Wayne Acoustics · Est. 1939</div>
         <h1>
@@ -462,7 +642,7 @@ export const TapeDeck: React.FC = () => {
         </h1>
       </div>
 
-      <div className="deck">
+      <div className="deck shadow-2xl">
         <div className="deck-top">
           <div className="plate">
             MODEL <b>Δ-1939</b>
@@ -485,6 +665,13 @@ export const TapeDeck: React.FC = () => {
             <div className="led" id="led" />
           </div>
         </div>
+
+        {/* Embedded YouTube Container Frame */}
+        {currentTape.type === 'youtube' && (
+          <div className="w-full aspect-video rounded-xl overflow-hidden mb-3 border border-white/10 bg-black relative shadow-inner">
+            <div id="deck-youtube-container" className="w-full h-full object-cover" />
+          </div>
+        )}
 
         <div className="screen">
           <div className="screen-row1">
@@ -542,6 +729,32 @@ export const TapeDeck: React.FC = () => {
             <div className="tape-window-strip" />
           </div>
         </div>
+
+        {/* Outward Music Platform Links (Deluxe Saloon feature) */}
+        {(currentTape.spotifyUrl || currentTape.ytMusicUrl) && (
+          <div className="flex items-center justify-end gap-2 mt-3 text-[10px] font-mono">
+            {currentTape.spotifyUrl && (
+              <a
+                href={currentTape.spotifyUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-2.5 py-1 rounded-md bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 hover:text-white hover:bg-emerald-800 transition-colors flex items-center gap-1"
+              >
+                <span>Spotify</span> <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
+            {currentTape.ytMusicUrl && (
+              <a
+                href={currentTape.ytMusicUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-2.5 py-1 rounded-md bg-red-950/80 border border-red-500/30 text-red-300 hover:text-white hover:bg-red-800 transition-colors flex items-center gap-1"
+              >
+                <span>YT Music</span> <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
+          </div>
+        )}
 
         <div className="transport">
           <button className="tbtn" onClick={() => loadTrack(currentIndex - 1, true)} title="Previous tape">
