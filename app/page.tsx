@@ -21,6 +21,8 @@ declare global {
 }
 
 export default function Home() {
+  const basePath = process.env.NODE_ENV === 'production' ? '/batcave-player' : '';
+  const [bgUrl, setBgUrl] = useState<string>(`${basePath}/bg/scene-wide.png`);
   const [activeDeckMode, setActiveDeckMode] = useState<'broadcast' | 'tape'>('broadcast');
 
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string>('noir-nights');
@@ -34,6 +36,25 @@ export default function Home() {
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState<boolean>(false);
   const [isPlaylistsOpen, setIsPlaylistsOpen] = useState<boolean>(false);
+
+  // Responsive background image handler (landscape vs portrait)
+  useEffect(() => {
+    const updateBg = () => {
+      if (window.innerWidth < 768 || window.matchMedia('(orientation: portrait)').matches) {
+        setBgUrl(`${basePath}/bg/scene-tall.png`);
+      } else {
+        setBgUrl(`${basePath}/bg/scene-wide.png`);
+      }
+    };
+
+    updateBg();
+    window.addEventListener('resize', updateBg);
+    window.addEventListener('orientationchange', updateBg);
+    return () => {
+      window.removeEventListener('resize', updateBg);
+      window.removeEventListener('orientationchange', updateBg);
+    };
+  }, [basePath]);
 
   // YouTube Player instance ref
   const playerRef = useRef<any>(null);
@@ -235,9 +256,12 @@ export default function Home() {
   };
 
   return (
-    <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-between overflow-hidden">
-      {/* 1. Fixed Hero Background */}
-      <div className="hero-bg -z-20 pointer-events-none" />
+    <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-between overflow-hidden bg-charcoal text-slate-100">
+      {/* 1. Fixed Hero Background (Responsive path with basePath fallback) */}
+      <div
+        className="hero-bg -z-20 pointer-events-none"
+        style={{ backgroundImage: `url('${bgUrl}')` }}
+      />
 
       {/* Searchlight Beam sweep effect when active */}
       <div className="sky fixed inset-0 -z-18 pointer-events-none">
@@ -266,7 +290,7 @@ export default function Home() {
         currentPlaylistName={currentPlaylist.name}
       />
 
-      {/* Mode Switcher Tabs (Shortwave Broadcast vs Wayne Tape Deck) */}
+      {/* Mode Switcher Tabs */}
       <div className="pt-20 sm:pt-24 z-20 flex items-center justify-center gap-2">
         <button
           onClick={() => setActiveDeckMode('broadcast')}
