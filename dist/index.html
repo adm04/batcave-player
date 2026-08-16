@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>WAYNE ACOUSTICS · Δ-1939 Batcave Tape Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #050507;
+      --cave-1: #0c0c11;
+      --cave-2: #17171f;
+      --panel: #1b1b22;
+      --panel-hi: #26262f;
+      --panel-lo: #121217;
+      --bat-yellow: #f5c518;
+      --bat-yellow-dim: #8a6f0c;
+      --amber: #ffb703;
+      --led-red: #ff3b30;
+      --steel: #8a96a8;
+      --cream: #ece7d6;
+      --line: #33333d;
+      --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+      --font-mono: 'Courier Prime', monospace;
+      --font-body: 'Inter', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #0b0c10;
+      color: #ece7d6;
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Fullscreen Background Scene */
+    .hero-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -20;
+      background-image: url('bg/scene-wide.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* Ambient Overlays */
+    .sky-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: -15;
+      background: linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%);
+      pointer-events: none;
+    }
+
+    .noise-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: -10;
+      pointer-events: none;
+      opacity: 0.25;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    /* Searchlight Sweeping Beam */
+    .beam-wrap {
+      position: fixed;
+      left: 30%;
+      bottom: 20%;
+      width: 8px;
+      height: 1200px;
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(-22deg);
+      opacity: 0;
+      transition: opacity .8s ease;
+      z-index: -18;
+      pointer-events: none;
+    }
+    body.powered .beam-wrap {
+      opacity: 1;
+      animation: beam-sweep 9s ease-in-out infinite;
+    }
+    .beam {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(245,197,24,.18), rgba(245,197,24,.03) 60%, transparent 100%);
+      clip-path: polygon(46% 100%, 54% 100%, 100% 0%, 0% 0%);
+      filter: blur(1px);
+    }
+    @keyframes beam-sweep {
+      0%, 100% { transform: translateX(-50%) rotate(-26deg); }
+      50% { transform: translateX(-50%) rotate(26deg); }
+    }
+
+    /* ---------- TOP-LEFT HEADER (Deluxe Saloon 1-to-1) ---------- */
+    .top-left-group {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      user-select: none;
+    }
+    .clock-display {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    }
+    .clock-display span {
+      font-size: 15px;
+      font-weight: 400;
+      margin-left: 4px;
+      color: #d1d5db;
+    }
+    .date-display {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: #9ca3af;
+      text-transform: uppercase;
+      font-weight: 600;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    }
+    .listener-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(14, 14, 18, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      width: fit-content;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      margin-top: 2px;
+    }
+    .listener-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .listener-text {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+    .credit-badge {
+      display: inline-block;
+      margin-top: 2px;
+      background: rgba(14, 14, 18, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #9ca3af;
+      text-decoration: none;
+      width: fit-content;
+      transition: all 0.2s ease;
+    }
+    .credit-badge:hover { color: #ffb703; border-color: rgba(255, 183, 3, 0.4); }
+    .whatsapp-btn {
+      margin-top: 6px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #25D366;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);
+      transition: transform 0.2s ease;
+    }
+    .whatsapp-btn:hover { transform: scale(1.08); }
+
+    /* ---------- TOP-RIGHT HEADER (Deluxe Saloon 1-to-1) ---------- */
+    .top-right-group {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      user-select: none;
+      max-width: 280px;
+    }
+    .nav-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-pill {
+      background: rgba(14, 14, 18, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e5e7eb;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+    .nav-pill:hover { color: #ffb703; border-color: #ffb703; }
+    .support-card {
+      background: rgba(14, 14, 18, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: right;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    }
+    .support-card p {
+      font-size: 11px;
+      color: #d1d5db;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .support-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-razorpay {
+      background: #e29329;
+      color: #000;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-kofi {
+      background: #ffdd00;
+      color: #000;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    .banner-pill {
+      background: rgba(14, 14, 18, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffb703;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      backdrop-filter: blur(12px);
+      cursor: pointer;
+    }
+
+    /* ---------- MAIN CONTAINER ---------- */
+    .main-container {
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      z-index: 20;
+      padding-top: 100px;
+      padding-bottom: 10px;
+    }
+
+    /* ---------- DELUXE SALOON FLOATING AUDIO PLAYER ---------- */
+    .deluxe-player {
+      width: 100%;
+      background: rgba(18, 18, 22, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1);
+      backdrop-filter: blur(20px);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .album-art {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .player-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .player-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .track-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-sub {
+      font-size: 11.5px;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-artist {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #6b7280;
+    }
+    .seekbar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .time-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: #9ca3af;
+    }
+    .seekbar {
+      width: 100%;
+      height: 5px;
+      background: #27272a;
+      border-radius: 3px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .seekbar-fill {
+      height: 100%;
+      width: 15%;
+      background: #e5e7eb;
+      border-radius: 3px;
+      transition: width 0.2s linear;
+    }
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2px;
+    }
+    .transport-mini {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-circle-play {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(255,255,255,0.2);
+    }
+    .btn-icon {
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-icon:hover { color: #ffffff; }
+    .outward-links {
+      display: flex;
+      gap: 6px;
+    }
+    .link-pill {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #e5e7eb;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* ---------- WAYNE ACOUSTICS TAPE DECK (Skeuomorphic Centerpiece) ---------- */
+    .rig {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .brandline { text-align: center; }
+    .brandline .kicker {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .35em;
+      color: var(--steel);
+      text-transform: uppercase;
+    }
+    .brandline h1 {
+      margin: 2px 0 0;
+      font-family: var(--font-display);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-size: 24px;
+      color: var(--cream);
+    }
+    .brandline h1 span { color: var(--bat-yellow); }
+
+    .deck {
+      width: 100%;
+      background: linear-gradient(180deg, var(--panel-hi), var(--panel) 12%, var(--panel) 88%, var(--panel-lo));
+      border-radius: 16px;
+      padding: 16px 16px 20px;
+      box-shadow: 0 24px 50px -15px rgba(0,0,0,.9), 0 0 0 1px #000, inset 0 1px 0 rgba(255,255,255,.08);
+      position: relative;
+    }
+    .deck-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .plate {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: .15em;
+      color: var(--steel);
+    }
+    .plate b { color: var(--bat-yellow-dim); }
+    .switch-unit { display: flex; align-items: center; gap: 8px; }
+    .led {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--led-red);
+      box-shadow: 0 0 4px rgba(255,59,48,.6);
+    }
+    body.powered .led {
+      background: var(--bat-yellow);
+      box-shadow: 0 0 8px 2px rgba(245,197,24,.85);
+    }
+    .toggle {
+      width: 48px; height: 24px;
+      border-radius: 6px;
+      background: #0e0e12;
+      border: 1px solid #000;
+      position: relative;
+      cursor: pointer;
+      padding: 2px;
+    }
+    .toggle .knob {
+      width: 20px; height: 18px;
+      border-radius: 4px;
+      background: linear-gradient(180deg,#3a3a44,#222228);
+      position: absolute; top: 2px; left: 2px;
+      transition: left .18s ease;
+    }
+    body.powered .toggle .knob {
+      left: 24px;
+      background: linear-gradient(180deg,var(--bat-yellow),#b8940e);
+    }
+
+    .screen {
+      background: #0a0d09;
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,.85), inset 0 0 0 1px #000;
+      position: relative;
+      overflow: hidden;
+      filter: brightness(.35) saturate(.4);
+      transition: filter .5s ease;
+    }
+    body.powered .screen { filter: brightness(1) saturate(1); }
+    .screen-row1 {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em;
+      color: #c9d94a; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .track-title-screen {
+      font-family: var(--font-display);
+      font-size: 16px; letter-spacing: .05em; text-transform: uppercase;
+      color: var(--amber);
+      text-shadow: 0 0 6px rgba(255,183,3,.5);
+      white-space: nowrap; overflow: hidden;
+      margin-bottom: 8px;
+      height: 20px;
+    }
+    .eq { display: flex; align-items: flex-end; gap: 3px; height: 28px; margin-bottom: 6px; }
+    .eq i {
+      flex: 1; background: linear-gradient(180deg, var(--amber), #7a5300);
+      height: 6%; border-radius: 1px 1px 0 0;
+      transition: height .08s linear;
+    }
+    .counter-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--font-mono); font-size: 9px; color: #8fa06a;
+    }
+    .counter {
+      background: #000; border-radius: 3px; padding: 2px 6px;
+      color: var(--amber); font-size: 12px; letter-spacing: .12em;
+    }
+
+    .cassette-window {
+      margin-top: 14px;
+      background: #08080a;
+      border-radius: 8px;
+      padding: 14px 18px;
+      box-shadow: inset 0 3px 12px rgba(0,0,0,.9);
+    }
+    .tape-body {
+      background: linear-gradient(180deg, #d6cfae, #bfb68f);
+      border-radius: 6px;
+      padding: 12px 14px 8px;
+      position: relative;
+      opacity: .35;
+      filter: grayscale(.6);
+      transition: opacity .4s ease, filter .4s ease;
+    }
+    body.powered .tape-body { opacity: 1; filter: grayscale(0); }
+    .tape-label {
+      background: var(--cream);
+      border: 1.5px solid #1a1a1a;
+      border-radius: 3px;
+      padding: 4px 8px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .tape-label .cat { font-family: var(--font-mono); font-size: 7.5px; color: #555; }
+    .tape-label .name { font-family: var(--font-display); font-size: 12px; color: #111; text-transform: uppercase; }
+    .reels { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+    .reel {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: radial-gradient(circle, #1a1a1a 0 14%, #2b2b2b 14% 18%, #1a1a1a 18% 100%);
+      display: flex; align-items: center; justify-content: center;
+      animation: spin-reel 3.2s linear infinite;
+      animation-play-state: paused;
+    }
+    body.playing .reel { animation-play-state: running; }
+    @keyframes spin-reel { to { transform: rotate(360deg); } }
+
+    .transport {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 14px;
+    }
+    .tbtn {
+      width: 46px; height: 38px;
+      background: linear-gradient(180deg, var(--panel-hi), var(--panel-lo));
+      border: 1px solid #000; border-radius: 6px;
+      color: var(--cream); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tbtn.play {
+      width: 56px; height: 44px;
+      background: linear-gradient(180deg, var(--bat-yellow), #a97e0a);
+      color: #1a1305;
+    }
+
+    .lowerbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 14px;
+    }
+    .vol-unit { display: flex; align-items: center; gap: 6px; }
+    .vol-label { font-family: var(--font-mono); font-size: 8.5px; color: var(--steel); }
+    .knob {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #3a3a44, #17171d 70%);
+      position: relative; cursor: pointer;
+    }
+    .knob .tick {
+      position: absolute; top: 2px; left: 50%; width: 2px; height: 8px;
+      background: var(--bat-yellow);
+      transform-origin: 1px 14px;
+      transform: translateX(-50%) rotate(0deg);
+    }
+    .eject {
+      border: 1px solid var(--line); color: var(--steel);
+      font-family: var(--font-mono); font-size: 9px;
+      padding: 6px 10px; border-radius: 5px; cursor: pointer;
+    }
+
+    .shelf { width: 100%; }
+    .shelf-label { font-family: var(--font-mono); font-size: 9px; color: var(--steel); margin-bottom: 8px; }
+    .shelf-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .tape-card {
+      background: linear-gradient(180deg,#d6cfae,#b9b088);
+      border-radius: 5px; padding: 6px 8px; cursor: pointer;
+      border: 1.5px solid transparent; text-align: left;
+    }
+    .tape-card.active { border-color: var(--bat-yellow); }
+    .tape-card .cat { font-family: var(--font-mono); font-size: 6.5px; color: #555; }
+    .tape-card .name { font-family: var(--font-display); font-size: 10.5px; color: #111; text-transform: uppercase; }
+
+    /* Centered Footer */
+    footer {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(156, 163, 175, 0.7);
+      text-align: center;
+      margin-top: 10px;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body className="powered">
+  <!-- Fullscreen Background Scene -->
+  <div className="hero-bg"></div>
+  <div className="sky-overlay"></div>
+  <div className="noise-overlay"></div>
+
+  <!-- Searchlight Sweeping Beam -->
+  <div className="beam-wrap">
+    <div className="beam"></div>
+  </div>
+
+  <!-- TOP-LEFT CONTROL GROUP (Deluxe Saloon 1-to-1) -->
+  <div className="top-left-group">
+    <div className="clock-display" id="live-clock">9:31<span>pm</span></div>
+    <div className="date-display" id="live-date">SUNDAY, 16 AUGUST · IST</div>
+    <div className="listener-pill">
+      <div className="listener-dot"></div>
+      <span className="listener-text">605 listening</span>
+    </div>
+    <a href="https://x.com" target="_blank" className="credit-badge">built by <b>𝕏 @adm04</b></a>
+    <a href="https://whatsapp.com" target="_blank" className="whatsapp-btn" title="Join WhatsApp Station">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.157 4.228 4.228-1.157z"/></svg>
+    </a>
+  </div>
+
+  <!-- TOP-RIGHT CONTROL GROUP (Deluxe Saloon 1-to-1) -->
+  <div className="top-right-group">
+    <div className="nav-buttons">
+      <button className="nav-pill">Playlists</button>
+      <button className="nav-pill">All songs</button>
+    </div>
+    <div className="support-card">
+      <p>Help us keep this station running. Your support means a lot.</p>
+      <div className="support-actions">
+        <button className="btn-razorpay">Razorpay</button>
+        <button className="btn-kofi">Ko-fi</button>
+      </div>
+    </div>
+    <div className="banner-pill">Click here to enjoy your old school memories</div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div className="main-container">
+    <!-- DELUXE SALOON FLOATING AUDIO PLAYER -->
+    <div className="deluxe-player">
+      <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80" alt="Album Cover" className="album-art" id="player-art" />
+      <div className="player-details">
+        <div className="player-header">
+          <div>
+            <div className="track-name" id="player-title">Roja Jaaneman</div>
+            <div className="track-sub" id="player-sub">Roja Jaaneman · Roja (1992)</div>
+            <div className="track-artist" id="player-artist">Hariharan</div>
+          </div>
+        </div>
+        <div className="seekbar-row">
+          <div className="time-labels">
+            <span id="curr-time">0:19</span>
+            <span>54:07</span>
+          </div>
+          <div className="seekbar"><div className="seekbar-fill" id="seek-fill"></div></div>
+        </div>
+        <div className="controls-row">
+          <div className="transport-mini">
+            <button className="btn-icon" id="btn-prev">|◄</button>
+            <button className="btn-circle-play" id="btn-play">►</button>
+            <button className="btn-icon" id="btn-next">►|</button>
+          </div>
+          <div className="outward-links">
+            <a href="https://open.spotify.com" target="_blank" className="link-pill">Spotify ↗</a>
+            <a href="https://music.youtube.com" target="_blank" className="link-pill">YT Music ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAYNE ACOUSTICS SKEUOMORPHIC TAPE DECK -->
+    <div className="rig">
+      <div className="brandline">
+        <div className="kicker">Wayne Acoustics · Est. 1939</div>
+        <h1>Batcave <span>Tape</span> Deck</h1>
+      </div>
+
+      <div className="deck">
+        <div className="deck-top">
+          <div className="plate">MODEL <b>Δ-1939</b><br/>SERIAL GC-0417</div>
+          <div className="switch-unit">
+            <div className="toggle" id="power-toggle"><div className="knob"></div></div>
+            <div className="led"></div>
+          </div>
+        </div>
+
+        <div className="screen">
+          <div className="screen-row1">
+            <span id="deck-status">STANDBY</span>
+            <span>GTH · 91.9</span>
+          </div>
+          <div className="track-title-screen" id="deck-title">GOTHAM RAIN</div>
+          <div className="eq" id="eq-bars">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div className="counter-row">
+            <span>TAPE COUNTER</span>
+            <span className="counter" id="tape-counter">0000</span>
+          </div>
+        </div>
+
+        <div className="cassette-window">
+          <div className="tape-body">
+            <div className="tape-label">
+              <div className="cat" id="deck-cat">SIDE A · AMBIENT</div>
+              <div className="name" id="deck-tape-name">GOTHAM RAIN</div>
+            </div>
+            <div className="reels">
+              <div className="reel"></div>
+              <div className="reel"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="transport">
+          <button className="tbtn" id="deck-prev">|◄</button>
+          <button className="tbtn" id="deck-stop">■</button>
+          <button className="tbtn play" id="deck-play">►</button>
+          <button className="tbtn" id="deck-next">►|</button>
+        </div>
+
+        <div className="lowerbar">
+          <div className="vol-unit">
+            <span className="vol-label">VOL</span>
+            <div className="knob" id="vol-knob"><div className="tick" id="vol-tick"></div></div>
+          </div>
+          <label className="eject">
+            ▵ Insert tape
+            <input type="file" id="file-input" accept="audio/*" multiple style="display:none;" />
+          </label>
+        </div>
+      </div>
+
+      <div className="shelf">
+        <div className="shelf-label">Tape shelf</div>
+        <div className="shelf-row" id="shelf-row">
+          <div className="tape-card active" data-idx="0">
+            <div className="cat">SIDE A · AMBIENT</div>
+            <div className="name">Gotham Rain</div>
+          </div>
+          <div className="tape-card" data-idx="1">
+            <div className="cat">SIDE A · DRONE</div>
+            <div className="name">Batcave Hum</div>
+          </div>
+          <div className="tape-card" data-idx="2">
+            <div className="cat">SIDE B · SYNTH</div>
+            <div className="name">Night Patrol</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>contact: deluxesaloon.space@gmail.com</footer>
+
+  <script>
+    // Live IST Clock
+    function updateClock() {
+      const now = new Date();
+      const optionsTime = { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true };
+      const optionsDate = { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' };
+      
+      const timeParts = new Intl.DateTimeFormat('en-IN', optionsTime).format(now).split(' ');
+      const dateStr = new Intl.DateTimeFormat('en-GB', optionsDate).format(now).toUpperCase();
+      
+      document.getElementById('live-clock').innerHTML = timeParts[0] + '<span>' + (timeParts[1] ? timeParts[1].toLowerCase() : '') + '</span>';
+      document.getElementById('live-date').innerText = dateStr + ' · IST';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Audio Context & Synth Logic
+    let isPowered = true;
+    let isPlaying = false;
+    let audioCtx = null;
+    let masterGain = null;
+    let stopSynthFn = null;
+    let currentTapeIdx = 0;
+    let timerSecs = 19;
+
+    const tracks = [
+      { name: 'Gotham Rain', cat: 'SIDE A · AMBIENT', artist: 'Batcave Audio Unit', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
+      { name: 'Batcave Hum', cat: 'SIDE A · DRONE', artist: 'Shortwave 88.4 MHz', cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&auto=format&fit=crop&q=80' },
+      { name: 'Night Patrol Synth', cat: 'SIDE B · SYNTH', artist: 'Vigilante Synthesizers', cover: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=300&auto=format&fit=crop&q=80' }
+    ];
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.8;
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playRain() {
+      initAudio();
+      const bufferSize = 2 * audioCtx.sampleRate;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer; noise.loop = true;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass'; filter.frequency.value = 1600;
+      noise.connect(filter); filter.connect(masterGain);
+      noise.start();
+      return () => { try { noise.stop(); } catch(e){} };
+    }
+
+    function togglePlay() {
+      if (!isPowered) return;
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        document.body.classList.add('playing');
+        document.getElementById('deck-status').innerText = 'PLAYING';
+        document.getElementById('btn-play').innerText = '❚❚';
+        document.getElementById('deck-play').innerText = '❚❚';
+        stopSynthFn = playRain();
+      } else {
+        document.body.classList.remove('playing');
+        document.getElementById('deck-status').innerText = 'PAUSED';
+        document.getElementById('btn-play').innerText = '►';
+        document.getElementById('deck-play').innerText = '►';
+        if (stopSynthFn) stopSynthFn();
+      }
+    }
+
+    document.getElementById('btn-play').addEventListener('click', togglePlay);
+    document.getElementById('deck-play').addEventListener('click', togglePlay);
+
+    // Power Toggle
+    document.getElementById('power-toggle').addEventListener('click', function() {
+      isPowered = !isPowered;
+      if (isPowered) {
+        document.body.classList.add('powered');
+        document.getElementById('deck-status').innerText = 'STANDBY';
+      } else {
+        document.body.classList.remove('powered', 'playing');
+        document.getElementById('deck-status').innerText = 'OFF';
+        if (stopSynthFn) stopSynthFn();
+        isPlaying = false;
+      }
+    });
+
+    // Equalizer animation
+    setInterval(function() {
+      if (isPlaying) {
+        const bars = document.querySelectorAll('#eq-bars i');
+        bars.forEach(b => {
+          b.style.height = (Math.random() * 80 + 10) + '%';
+        });
+        timerSecs++;
+        const mins = Math.floor(timerSecs / 60);
+        const secs = String(timerSecs % 60).padStart(2, '0');
+        document.getElementById('curr-time').innerText = mins + ':' + secs;
+        document.getElementById('tape-counter').innerText = String(timerSecs).padStart(4, '0');
+      }
+    }, 150);
+  </script>
+</body>
+</html>
