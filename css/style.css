@@ -560,34 +560,145 @@ input[type="file"]{ display:none; }
   font-family:var(--font-mono); font-size:9px; letter-spacing:.08em; color:#8a96a8;
 }
 
-/* ---------- RESPONSIVE MEDIA QUERIES ---------- */
-@media (max-width:600px){
-  body { padding: 24px 12px 40px; }
-  .clock-display { font-size: 28px; }
-  .date-display { font-size: 11px; }
-  .listener-pill, .credit-badge { padding: 3px 10px; font-size: 10px; }
-  .rig { gap: 16px; }
+/* ---------- COMPACT MOBILE SCALING (SHOW MORE BACKGROUND ARTWORK) ---------- */
+@media (max-width: 640px){
+  body {
+    padding: 16px 12px 40px;
+  }
+  .rig {
+    max-width: 360px;
+    gap: 12px;
+  }
+  .brandline h1 {
+    font-size: 22px;
+  }
+  .brandline .kicker {
+    font-size: 9px;
+    letter-spacing: .25em;
+  }
+  .top-left-group {
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+  .clock-display {
+    font-size: 24px;
+  }
+  .date-display {
+    font-size: 10px;
+  }
+  .listener-pill, .credit-badge {
+    padding: 2px 9px;
+    font-size: 9.5px;
+  }
+  .deck {
+    padding: 14px 14px 16px;
+    border-radius: 14px;
+  }
+  .screen {
+    padding: 10px 12px;
+  }
+  .track-title {
+    font-size: 15px;
+    height: 18px;
+    margin-bottom: 6px;
+  }
+  .eq {
+    height: 24px;
+    margin-bottom: 6px;
+  }
+  .cassette-window {
+    margin-top: 10px;
+    padding: 12px 14px;
+  }
+  .tape-body {
+    padding: 10px 12px 6px;
+  }
+  .tape-label {
+    padding: 4px 8px 6px;
+    margin-bottom: 6px;
+  }
+  .tape-label .name {
+    font-size: 11px;
+  }
+  .reel {
+    width: 40px;
+    height: 40px;
+  }
+  .transport {
+    margin-top: 12px;
+    gap: 6px;
+  }
+  .tbtn {
+    width: 42px;
+    height: 36px;
+  }
+  .tbtn.play {
+    width: 52px;
+    height: 42px;
+  }
+  .tbtn svg {
+    width: 14px;
+    height: 14px;
+  }
+  .tbtn.play svg {
+    width: 16px;
+    height: 16px;
+  }
+  .lowerbar {
+    margin-top: 10px;
+    gap: 8px;
+  }
+  .knob {
+    width: 32px;
+    height: 32px;
+  }
+  .knob .tick {
+    height: 6px;
+    transform-origin: 1px 13px;
+  }
+  .eject {
+    padding: 6px 10px;
+    font-size: 9px;
+  }
+  .shelf-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .tape-card {
+    padding: 6px 7px 8px;
+  }
+  .tape-card .name {
+    font-size: 10.5px;
+  }
 }
 
-@media (max-width:380px){
-  body { padding: 18px 8px 30px; }
-  .clock-display { font-size: 24px; }
-  .date-display { font-size: 10px; }
-  .listener-pill, .credit-badge { padding: 2px 8px; font-size: 9px; }
-  .deck { padding: 14px 10px 16px; border-radius: 14px; }
-  .cassette-window { padding: 12px 10px; }
-  .tape-body { padding: 12px 10px 8px; }
-  .reel { width: 40px; height: 40px; }
-  .tbtn { width: 40px; height: 36px; }
-  .tbtn.play { width: 48px; height: 42px; }
-  .tbtn svg { width: 14px; height: 14px; }
-  .tbtn.play svg { width: 16px; height: 16px; }
-  .lowerbar { gap: 10px; justify-content: space-between; }
-  .knob { width: 34px; height: 34px; }
-  .knob .tick { height: 7px; transform-origin: 1px 14px; }
-  .shelf-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .tape-card { padding: 6px 7px 8px; }
-  .tape-card .name { font-size: 11px; }
+@media (max-width: 380px){
+  body {
+    padding: 12px 8px 30px;
+  }
+  .rig {
+    max-width: 310px;
+    gap: 10px;
+  }
+  .deck {
+    padding: 10px 10px 12px;
+    border-radius: 12px;
+  }
+  .cassette-window {
+    padding: 8px 10px;
+  }
+  .reel {
+    width: 34px;
+    height: 34px;
+  }
+  .tbtn {
+    width: 36px;
+    height: 32px;
+  }
+  .tbtn.play {
+    width: 44px;
+    height: 38px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce){
