@@ -571,7 +571,7 @@
     <div class="listener-dot"></div>
     <span class="listener-text" id="live-listeners">587 listening</span>
   </div>
-  <a href="https://x.com/_adm04_" target="_blank" rel="noreferrer" class="credit-badge">built by <b>𝕏 @_adm04_</b></a>
+  <a href="https://github.com/adm04" target="_blank" rel="noreferrer" class="credit-badge">built by <b>@adm04</b></a>
 </div>
 
 <!-- Hidden YouTube Audio Iframe Element -->
@@ -680,10 +680,32 @@
 (function(){
   "use strict";
 
-  // ---------- Live Data Updates (Time, Date, Listeners) ----------
+  // ---------- Live Data Updates (WorldTimeAPI sync) ----------
+  let timeOffset = 0;
+
+  async function fetchExactTime() {
+    try {
+      const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
+      if (res.ok) {
+        const data = await res.json();
+        const serverMs = new Date(data.datetime).getTime();
+        timeOffset = serverMs - Date.now();
+      }
+    } catch(e) {
+      try {
+        const res2 = await fetch('https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata');
+        if (res2.ok) {
+          const data2 = await res2.json();
+          const serverMs = new Date(data2.dateTime).getTime();
+          timeOffset = serverMs - Date.now();
+        }
+      } catch(err){}
+    }
+  }
+
   function updateLiveData() {
     try {
-      const now = new Date();
+      const now = new Date(Date.now() + timeOffset);
       const optionsTime = { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true };
       const timeFormatted = new Intl.DateTimeFormat('en-IN', optionsTime).format(now);
       const timeMatch = timeFormatted.match(/(\d+:\d+)\s*([APap][Mm])/);
@@ -705,6 +727,8 @@
     if(el) el.innerText = currentListeners.toLocaleString() + ' listening';
   }
 
+  fetchExactTime();
+  setInterval(fetchExactTime, 60000);
   setInterval(updateLiveData, 1000);
   setInterval(updateListeners, 4000);
   updateLiveData();
