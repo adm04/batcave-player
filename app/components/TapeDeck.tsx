@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Square, SkipBack, SkipForward, Power, Upload, Volume2 } from 'lucide-react';
+import { Play, Pause, Square, SkipBack, SkipForward } from 'lucide-react';
 
 interface TapeItem {
   id: string;
@@ -37,10 +37,9 @@ export const TapeDeck: React.FC = () => {
   const startVolRef = useRef<number>(0.7);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Equalizer DOM refs
+  // Equalizer DOM ref
   const eqContainerRef = useRef<HTMLDivElement>(null);
 
-  // Built-in Synthesized Cassettes
   const getEnsureCtx = useCallback(() => {
     if (!ctxRef.current) {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -262,7 +261,6 @@ export const TapeDeck: React.FC = () => {
 
   const currentTape = playlist[currentIndex] || playlist[0];
 
-  // Stop active sources
   const stopCurrentSource = useCallback(() => {
     if (stopFnRef.current) {
       try {
@@ -291,7 +289,6 @@ export const TapeDeck: React.FC = () => {
     }, 1000);
   }, [stopCounter]);
 
-  // EQ Animation Tick
   const startEQ = useCallback(() => {
     if (rafRef.current) return;
     const tick = () => {
@@ -324,6 +321,9 @@ export const TapeDeck: React.FC = () => {
   const pausePlayback = useCallback(() => {
     if (mediaElRef.current) mediaElRef.current.pause();
     setPlaying(false);
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('playing');
+    }
     setStatusText(powered ? 'PAUSED' : 'STANDBY');
     stopCounter();
     stopEQ();
@@ -349,6 +349,9 @@ export const TapeDeck: React.FC = () => {
       }
     }
     setPlaying(true);
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('playing');
+    }
     setStatusText('PLAYING');
     startCounter();
     startEQ();
@@ -378,7 +381,6 @@ export const TapeDeck: React.FC = () => {
     [playlist.length, stopCurrentSource, powered, startPlayback, pausePlayback]
   );
 
-  // Power Toggle
   const togglePower = () => {
     const nextPower = !powered;
     setPowered(nextPower);
@@ -387,6 +389,7 @@ export const TapeDeck: React.FC = () => {
         document.body.classList.add('powered');
       } else {
         document.body.classList.remove('powered');
+        document.body.classList.remove('playing');
       }
     }
     if (nextPower) {
@@ -404,7 +407,6 @@ export const TapeDeck: React.FC = () => {
     }
   };
 
-  // Handle file uploads
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -418,15 +420,14 @@ export const TapeDeck: React.FC = () => {
     }));
 
     setPlaylist((prev) => [...prev, ...newTapes]);
-    setCurrentIndex(playlist.length); // target first newly uploaded tape
-    if (!powered) setPowered(true);
+    setCurrentIndex(playlist.length);
+    if (!powered) togglePower();
     setTimeout(() => {
       loadTrack(playlist.length, true);
     }, 100);
     e.target.value = '';
   };
 
-  // Volume knob drag handler
   const handlePointerDownVol = (e: React.PointerEvent<HTMLDivElement>) => {
     isDraggingVolRef.current = true;
     startYRef.current = e.clientY;
@@ -446,232 +447,146 @@ export const TapeDeck: React.FC = () => {
     }
   };
 
-  const handlePointerUpVol = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerUpVol = () => {
     isDraggingVolRef.current = false;
   };
 
   const volAngle = -135 + volume * 270;
 
   return (
-    <div className="w-full max-w-[560px] mx-auto my-6 flex flex-col items-center gap-5 text-slate-100 font-sans select-none">
-      {/* Brand Header */}
-      <div className="text-center">
-        <div className="font-mono text-[11px] tracking-[0.35em] text-slate-400 uppercase">
-          WAYNE ACOUSTICS · EST. 1939
-        </div>
-        <h2 className="font-mono text-2xl sm:text-3xl font-extrabold uppercase tracking-wider text-slate-100 mt-1">
-          BATCAVE <span className="text-amber-glow">TAPE</span> DECK
-        </h2>
+    <div className="rig">
+      <div className="brandline">
+        <div className="kicker">Wayne Acoustics · Est. 1939</div>
+        <h1>
+          Batcave <span>Tape</span> Deck
+        </h1>
       </div>
 
-      {/* Main Deck Container */}
-      <div
-        className={`w-full rounded-3xl p-5 sm:p-6 shadow-2xl relative border border-white/10 transition-all duration-300 ${
-          powered ? 'bg-slate-950/90' : 'bg-slate-950/70'
-        } noir-glass`}
-      >
-        {/* Deck Top Plate & Power Switch */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="font-mono text-[10px] tracking-widest text-slate-400 uppercase">
-            MODEL <b className="text-amber-glow/90 font-bold">Δ-1939</b>
+      <div className="deck">
+        <div className="deck-top">
+          <div className="plate">
+            MODEL <b>Δ-1939</b>
             <br />
             SERIAL GC-0417
           </div>
-
-          <div className="flex items-center gap-3">
-            {/* LED indicator */}
-            <div
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                powered
-                  ? 'bg-amber-glow shadow-[0_0_10px_2px_rgba(255,179,71,0.85)]'
-                  : 'bg-crimson-bright opacity-40 animate-pulse'
-              }`}
-            />
-
-            {/* Toggle switch */}
-            <button
-              onClick={togglePower}
-              title="Power Toggle"
-              className="w-13 h-7 rounded-lg bg-black border border-white/20 p-0.5 relative cursor-pointer shadow-inner"
-            >
+          <div className="switch-unit">
+            <div>
               <div
-                className={`w-5 h-5 rounded-md transition-all duration-200 ${
-                  powered
-                    ? 'translate-x-6 bg-gradient-to-b from-amber-glow to-amber-600 shadow-md'
-                    : 'translate-x-0 bg-gradient-to-b from-slate-700 to-slate-900'
-                }`}
-              />
-            </button>
-            <span className="font-mono text-[9px] tracking-widest text-slate-400 uppercase">
-              POWER
-            </span>
+                className="toggle"
+                onClick={togglePower}
+                role="switch"
+                aria-checked={powered}
+                aria-label="Power"
+              >
+                <div className="knob" />
+              </div>
+              <div className="toggle-label">Power</div>
+            </div>
+            <div className="led" id="led" />
           </div>
         </div>
 
-        {/* LCD Screen Display */}
-        <div
-          className={`rounded-xl p-3.5 bg-black/90 border border-white/10 shadow-inner relative overflow-hidden transition-all duration-500 ${
-            powered ? 'brightness-100 saturate-100' : 'brightness-40 saturate-30'
-          }`}
-        >
-          <div className="flex justify-between items-baseline font-mono text-[10px] tracking-widest text-lime-400 uppercase mb-1">
+        <div className="screen">
+          <div className="screen-row1">
             <span>{statusText}</span>
             <span>GTH · 91.9</span>
           </div>
-
-          {/* Track Title Display */}
-          <div className="h-6 overflow-hidden mb-2">
-            <span className="font-mono text-base font-bold text-amber-glow uppercase tracking-wider drop-shadow-[0_0_6px_rgba(255,183,3,0.5)]">
-              {currentTape ? currentTape.name : '—'}
-            </span>
+          <div className="track-title">
+            <span>{currentTape ? currentTape.name.toUpperCase() : '—'}</span>
           </div>
-
-          {/* Equalizer Bars */}
-          <div ref={eqContainerRef} className="flex items-end gap-[3px] h-8 mb-2">
+          <div className="eq" ref={eqContainerRef}>
             {Array.from({ length: 24 }).map((_, i) => (
-              <i
-                key={i}
-                className="flex-1 bg-gradient-to-t from-amber-700 to-amber-glow rounded-t-[1px] transition-all duration-75 shadow-[0_0_4px_rgba(255,183,3,0.35)]"
-                style={{ height: '6%' }}
-              />
+              <i key={i} style={{ height: '6%' }} />
             ))}
           </div>
-
-          {/* Tape Counter */}
-          <div className="flex justify-between items-center font-mono text-[10px] text-lime-600 tracking-wider">
+          <div className="counter-row">
             <span>TAPE COUNTER</span>
-            <span className="bg-black px-2 py-0.5 rounded text-amber-glow text-xs font-bold border border-white/10 shadow-inner">
-              {String(counterValue).padStart(4, '0')}
-            </span>
+            <span className="counter">{String(counterValue).padStart(4, '0')}</span>
           </div>
         </div>
 
-        {/* Cassette Window */}
-        <div className="mt-4 bg-slate-950/90 rounded-2xl p-4 border border-white/10 shadow-inner relative">
-          <div
-            className={`rounded-xl p-4 transition-all duration-300 relative border border-black/20 ${
-              powered
-                ? 'bg-gradient-to-b from-[#d6cfae] to-[#bfb68f] opacity-100 grayscale-0'
-                : 'bg-slate-800 opacity-40 grayscale'
-            }`}
-          >
-            {/* Screws */}
-            <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-slate-700" />
-            <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-slate-700" />
-            <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-slate-700" />
-            <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-slate-700" />
-
-            {/* Cassette Label */}
-            <div className="bg-amber-50 border-2 border-slate-900 rounded p-2 text-center mb-3">
-              <div className="font-mono text-[8px] tracking-widest text-slate-600">
-                {currentTape ? currentTape.cat : 'SIDE A · GOTHAM FM'}
+        <div className="cassette-window">
+          <div className="tape-body">
+            <div className="screws s1" />
+            <div className="screws s2" />
+            <div className="screws s3" />
+            <div className="screws s4" />
+            <div className="tape-label">
+              <div className="cat">{currentTape ? currentTape.cat : 'SIDE A · GOTHAM FM'}</div>
+              <div className="name">{currentTape ? currentTape.name : 'Select a tape'}</div>
+            </div>
+            <div className="reels">
+              <div className="reel">
+                <svg viewBox="0 0 56 56">
+                  <g fill="none" stroke="#6b6b60" strokeWidth="2">
+                    <circle cx="28" cy="28" r="15" />
+                    <line x1="28" y1="13" x2="28" y2="43" />
+                    <line x1="13" y1="28" x2="43" y2="28" />
+                    <line x1="17.6" y1="17.6" x2="38.4" y2="38.4" />
+                    <line x1="17.6" y1="38.4" x2="38.4" y2="17.6" />
+                  </g>
+                </svg>
               </div>
-              <div className="font-mono text-sm font-bold text-slate-900 uppercase truncate">
-                {currentTape ? currentTape.name : 'Select a tape'}
+              <div className="reel">
+                <svg viewBox="0 0 56 56">
+                  <g fill="none" stroke="#6b6b60" strokeWidth="2">
+                    <circle cx="28" cy="28" r="15" />
+                    <line x1="28" y1="13" x2="28" y2="43" />
+                    <line x1="13" y1="28" x2="43" y2="28" />
+                    <line x1="17.6" y1="17.6" x2="38.4" y2="38.4" />
+                    <line x1="17.6" y1="38.4" x2="38.4" y2="17.6" />
+                  </g>
+                </svg>
               </div>
             </div>
-
-            {/* Revolving Reels */}
-            <div className="flex justify-between items-center px-4">
-              <div
-                className={`w-14 h-14 rounded-full border-2 border-black/40 flex items-center justify-center bg-slate-900 shadow-md ${
-                  playing && powered ? 'animate-spin-running' : 'animate-spin-paused'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-black ring-1 ring-white/30" />
-                </div>
-              </div>
-
-              <div
-                className={`w-14 h-14 rounded-full border-2 border-black/40 flex items-center justify-center bg-slate-900 shadow-md ${
-                  playing && powered ? 'animate-spin-running' : 'animate-spin-paused'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-black ring-1 ring-white/30" />
-                </div>
-              </div>
-            </div>
+            <div className="tape-window-strip" />
           </div>
         </div>
 
-        {/* Transport Controls */}
-        <div className="flex items-center justify-center gap-3 mt-4">
-          <button
-            onClick={() => loadTrack(currentIndex - 1, true)}
-            title="Previous Tape"
-            className="w-12 h-11 rounded-lg bg-gradient-to-b from-slate-800 to-slate-950 border border-white/10 flex items-center justify-center text-slate-200 hover:text-white active:translate-y-0.5 transition-all cursor-pointer shadow-md"
-          >
-            <SkipBack className="w-4 h-4" />
+        <div className="transport">
+          <button className="tbtn" onClick={() => loadTrack(currentIndex - 1, true)} title="Previous tape">
+            <SkipBack />
           </button>
-
-          <button
-            onClick={stopPlayback}
-            title="Stop"
-            className="w-12 h-11 rounded-lg bg-gradient-to-b from-slate-800 to-slate-950 border border-white/10 flex items-center justify-center text-slate-200 hover:text-white active:translate-y-0.5 transition-all cursor-pointer shadow-md"
-          >
-            <Square className="w-4 h-4 fill-current" />
+          <button className="tbtn" onClick={stopPlayback} title="Stop">
+            <Square />
           </button>
-
           <button
+            className="tbtn play"
             onClick={() => {
               if (!powered) togglePower();
               if (playing) pausePlayback();
               else startPlayback();
             }}
-            title={playing ? 'Pause' : 'Play'}
-            className="w-16 h-12 rounded-lg bg-gradient-to-b from-amber-glow to-amber-600 border border-amber-400 flex items-center justify-center text-slate-950 active:translate-y-0.5 transition-all cursor-pointer shadow-lg shadow-amber-glow/20"
+            title="Play/Pause"
           >
-            {playing ? (
-              <Pause className="w-5 h-5 fill-current" />
-            ) : (
-              <Play className="w-5 h-5 fill-current ml-0.5" />
-            )}
+            {playing ? <Pause /> : <Play />}
           </button>
-
-          <button
-            onClick={() => loadTrack(currentIndex + 1, true)}
-            title="Next Tape"
-            className="w-12 h-11 rounded-lg bg-gradient-to-b from-slate-800 to-slate-950 border border-white/10 flex items-center justify-center text-slate-200 hover:text-white active:translate-y-0.5 transition-all cursor-pointer shadow-md"
-          >
-            <SkipForward className="w-4 h-4" />
+          <button className="tbtn" onClick={() => loadTrack(currentIndex + 1, true)} title="Next tape">
+            <SkipForward />
           </button>
         </div>
 
-        {/* Lower Control Bar: Volume & File Upload */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
-          {/* Rotary Volume Knob */}
-          <div className="flex items-center gap-3">
-            <Volume2 className="w-4 h-4 text-slate-400" />
-            <div className="flex flex-col items-center">
+        <div className="lowerbar">
+          <div className="vol-unit">
+            <span className="vol-label">VOL</span>
+            <div className="knob-wrap">
               <div
+                className="knob"
                 ref={volKnobRef}
                 onPointerDown={handlePointerDownVol}
                 onPointerMove={handlePointerMoveVol}
                 onPointerUp={handlePointerUpVol}
                 onPointerCancel={handlePointerUpVol}
-                title="Rotate to adjust Volume"
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 via-slate-900 to-black border border-white/20 shadow-md relative cursor-pointer touch-none"
               >
-                <div
-                  className="absolute top-1 left-1/2 w-0.5 h-2.5 bg-amber-glow rounded-full -translate-x-1/2 origin-[1px_16px] transition-transform duration-75"
-                  style={{ transform: `translateX(-50%) rotate(${volAngle}deg)` }}
-                />
+                <div className="tick" style={{ transform: `translateX(-50%) rotate(${volAngle}deg)` }} />
               </div>
-              <span className="font-mono text-[9px] tracking-widest text-slate-400 uppercase mt-1">
-                VOL {Math.round(volume * 100)}%
-              </span>
             </div>
           </div>
-
-          {/* Insert Tape Upload */}
-          <label className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-black/40 hover:bg-white/10 text-slate-300 hover:text-amber-glow font-mono text-xs tracking-wider transition-all cursor-pointer">
-            <Upload className="w-4 h-4" />
-            <span>INSERT TAPE</span>
+          <label className="eject">
+            ▵ Insert tape
             <input
-              ref={fileInputRef}
               type="file"
+              ref={fileInputRef}
               accept="audio/*"
               multiple
               onChange={handleFileUpload}
@@ -681,45 +596,30 @@ export const TapeDeck: React.FC = () => {
         </div>
       </div>
 
-      {/* Physical Tape Shelf */}
-      <div className="w-full">
-        <div className="font-mono text-[10px] tracking-widest text-slate-400 uppercase mb-2">
-          TAPE SHELF
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          {playlist.map((t, i) => {
-            const isActive = i === currentIndex;
-            return (
-              <button
-                key={t.id}
-                onClick={() => {
-                  if (!powered) togglePower();
-                  loadTrack(i, true);
-                }}
-                className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-amber-100/90 border-amber-glow text-slate-950 font-bold shadow-lg shadow-amber-glow/20 scale-[1.02]'
-                    : 'bg-slate-900/80 border-white/10 text-slate-300 hover:border-white/25 hover:bg-slate-800'
-                }`}
-              >
-                <div className="font-mono text-[8px] tracking-widest opacity-75">{t.cat}</div>
-                <div className="font-mono text-xs uppercase truncate mt-0.5">{t.name}</div>
-                <div className="flex gap-1.5 mt-2">
-                  <span className="w-3 h-3 rounded-full bg-slate-950 inline-block" />
-                  <span className="w-3 h-3 rounded-full bg-slate-950 inline-block" />
-                </div>
-              </button>
-            );
-          })}
-
-          {/* Upload card button */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-3 rounded-xl text-center border border-dashed border-white/20 text-slate-400 hover:text-amber-glow hover:border-amber-glow/60 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[78px]"
-          >
-            <span className="text-lg font-bold">+</span>
-            <span className="font-mono text-[9px] tracking-widest uppercase">INSERT TAPE</span>
-          </button>
+      <div className="shelf">
+        <div className="shelf-label">Tape shelf</div>
+        <div className="shelf-row">
+          {playlist.map((t, i) => (
+            <div
+              key={t.id}
+              className={`tape-card ${i === currentIndex ? 'active' : ''}`}
+              onClick={() => {
+                if (!powered) togglePower();
+                loadTrack(i, true);
+              }}
+            >
+              <div className="cat">{t.cat}</div>
+              <div className="name">{t.name}</div>
+              <div className="reel-mini">
+                <i />
+                <i />
+              </div>
+            </div>
+          ))}
+          <label className="tape-card upload" onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}>
+            <div className="plus">+</div>
+            <span>Insert tape</span>
+          </label>
         </div>
       </div>
     </div>
