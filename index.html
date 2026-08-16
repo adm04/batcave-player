@@ -54,6 +54,38 @@
     filter: brightness(0.68) contrast(1.15);
   }
 
+  /* Glowing Bat-Signal Pulsing Animation Overlay */
+  .batsignal-glow-wrap {
+    position: fixed;
+    top: 6%;
+    left: 4%;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -14;
+    mix-blend-mode: screen;
+    animation: batsignal-pulse 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes batsignal-pulse {
+    0% {
+      opacity: 0.45;
+      box-shadow: 0 0 50px 20px rgba(184, 220, 100, 0.25), inset 0 0 40px 15px rgba(245, 197, 24, 0.2);
+      transform: scale(0.97);
+    }
+    50% {
+      opacity: 0.95;
+      box-shadow: 0 0 100px 45px rgba(245, 215, 60, 0.6), inset 0 0 60px 25px rgba(245, 197, 24, 0.4);
+      transform: scale(1.04);
+    }
+    100% {
+      opacity: 0.55;
+      box-shadow: 0 0 60px 25px rgba(184, 220, 100, 0.35), inset 0 0 45px 18px rgba(245, 197, 24, 0.25);
+      transform: scale(1.0);
+    }
+  }
+
   .sky{
     position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
   }
@@ -436,13 +468,14 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .beam-wrap, .reel, .led{ animation:none !important; }
+    .beam-wrap, .reel, .led, .batsignal-glow-wrap{ animation:none !important; }
   }
 </style>
 </head>
 <body>
 
 <div class="hero-bg"></div>
+<div class="batsignal-glow-wrap"></div>
 
 <div class="sky" aria-hidden="true">
   <div class="stars"></div>
