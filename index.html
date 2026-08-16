@@ -107,6 +107,17 @@
     opacity:.5;
   }
 
+  /* Drizzle Rain Overlay Canvas */
+  #rainCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.65;
+  }
+
   /* Hidden YouTube Audio Iframe Element */
   #yt-audio-player {
     position: fixed;
@@ -557,7 +568,7 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .beam-wrap, .reel, .led{ animation:none !important; }
+    .beam-wrap, .reel, .led, #rainCanvas{ animation:none !important; }
   }
 </style>
 </head>
@@ -580,6 +591,7 @@
 <div id="yt-audio-player"></div>
 
 <div class="sky" aria-hidden="true">
+  <canvas id="rainCanvas"></canvas>
   <div class="stars"></div>
   <div class="beam-wrap"><div class="beam"></div></div>
   <svg class="skyline" viewBox="0 0 800 140" preserveAspectRatio="none">
@@ -681,6 +693,58 @@
 <script>
 (function(){
   "use strict";
+
+  // ---------- Drizzle Rain Animation Canvas ----------
+  (function initRainCanvas(){
+    const canvas = document.getElementById('rainCanvas');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', ()=>{
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const numDrops = 150;
+    const drops = [];
+    for(let i=0; i<numDrops; i++){
+      drops.push({
+        x: Math.random() * (width + 200) - 100,
+        y: Math.random() * height,
+        length: Math.random() * 18 + 10,
+        speed: Math.random() * 9 + 7,
+        opacity: Math.random() * 0.35 + 0.12,
+        width: Math.random() * 0.9 + 0.4
+      });
+    }
+
+    function drawRain(){
+      ctx.clearRect(0, 0, width, height);
+      ctx.lineCap = 'round';
+
+      for(let i=0; i<numDrops; i++){
+        const d = drops[i];
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - d.length * 0.18, d.y + d.length);
+        ctx.lineWidth = d.width;
+        ctx.strokeStyle = 'rgba(195, 215, 245, ' + d.opacity + ')';
+        ctx.stroke();
+
+        d.y += d.speed;
+        d.x -= d.speed * 0.18;
+
+        if(d.y > height){
+          d.y = -d.length;
+          d.x = Math.random() * (width + 200) - 100;
+        }
+      }
+      requestAnimationFrame(drawRain);
+    }
+    requestAnimationFrame(drawRain);
+  })();
 
   // ---------- TimeAPI Exact Time Sync ----------
   let timeOffset = 0;
