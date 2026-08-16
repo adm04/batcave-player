@@ -32,7 +32,6 @@ export const Header: React.FC<HeaderProps> = ({
           hour12: true,
         });
         const formatted = formatter.format(new Date());
-        // Formatted is e.g. "11:42 pm" or "11:42 PM"
         const match = formatted.match(/(\d+:\d+)\s*([APap][Mm])/);
         if (match) {
           setTimeParts({
@@ -59,53 +58,53 @@ export const Header: React.FC<HeaderProps> = ({
   const [hours, minutes] = timeParts.time.split(':');
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 sm:px-8 sm:py-5 pt-safe pl-safe pr-safe bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-auto">
+    <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 sm:px-8 sm:py-5 pt-safe pl-safe pr-safe bg-gradient-to-b from-black/90 via-black/50 to-transparent pointer-events-auto">
       {/* Top Left: Digital Clock */}
-      <div className="flex items-center gap-2 tracking-widest text-xs font-mono text-slate-300/90 select-none">
+      <div className="flex items-center gap-2 font-mono text-xs text-amber-glow drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] select-none">
         <span className="inline-block w-2 h-2 rounded-full bg-crimson-bright animate-pulse" />
-        <span className="font-semibold text-slate-200">
+        <span className="font-bold text-slate-100 text-sm">
           {hours}
-          <span className="animate-blink text-crimson-bright mx-[1px]">:</span>
+          <span className="animate-blink text-amber-glow mx-[1px]">:</span>
           {minutes}
         </span>
-        <span className="text-[10px] text-slate-400 font-sans tracking-normal font-medium">{timeParts.period} IST</span>
+        <span className="text-[10px] text-amber-glow/90 font-mono tracking-wider font-semibold">{timeParts.period} IST</span>
       </div>
 
       {/* Top Center: Listener Count & Playlist tag */}
-      <div className="hidden md:flex items-center gap-3 px-3 py-1 rounded-full bg-black/40 border border-white/10 backdrop-blur-md">
+      <div className="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-black/75 border border-white/20 backdrop-blur-md shadow-xl">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-crimson-bright opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-crimson-bright"></span>
         </span>
-        <span className="text-[11px] font-mono tracking-widest text-slate-300 uppercase">
+        <span className="text-[11px] font-mono tracking-widest text-slate-200 uppercase font-semibold">
           {listenerCount.toLocaleString()} LISTENING
         </span>
         <span className="text-slate-600">|</span>
         <button
           onClick={onOpenPlaylists}
-          className="text-[11px] font-mono tracking-wider text-amber-glow/90 hover:text-amber-glow transition-colors uppercase cursor-pointer"
+          className="text-[11px] font-mono tracking-wider text-amber-glow hover:text-white transition-colors uppercase cursor-pointer font-bold"
         >
           {currentPlaylistName}
         </button>
       </div>
 
-      {/* Top Right: Minimal Social & Navigation */}
-      <div className="flex items-center gap-4 text-xs font-mono tracking-widest text-slate-400">
+      {/* Top Right: Styled Noir Buttons */}
+      <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono tracking-wider">
         <button
           onClick={onOpenPlaylists}
-          className="md:hidden hover:text-slate-200 text-amber-glow/90 transition-colors uppercase cursor-pointer text-[11px]"
+          className="px-3 py-1 rounded-full bg-black/70 hover:bg-amber-glow hover:text-black border border-white/20 text-amber-glow transition-all cursor-pointer font-semibold shadow-md backdrop-blur-md"
         >
-          PLAYLISTS
+          CHANNEL
         </button>
         <button
           onClick={onOpenArchive}
-          className="hover:text-slate-100 transition-colors uppercase cursor-pointer text-[11px]"
+          className="px-3 py-1 rounded-full bg-black/70 hover:bg-white hover:text-black border border-white/20 text-slate-200 transition-all cursor-pointer font-semibold shadow-md backdrop-blur-md"
         >
           ARCHIVE
         </button>
         <button
           onClick={onOpenAbout}
-          className="hover:text-slate-100 transition-colors uppercase cursor-pointer text-[11px]"
+          className="px-3 py-1 rounded-full bg-black/70 hover:bg-white hover:text-black border border-white/20 text-slate-200 transition-all cursor-pointer font-semibold shadow-md backdrop-blur-md"
         >
           ABOUT
         </button>

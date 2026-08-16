@@ -4,9 +4,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GOTHAM BROADCAST // 1942 Late Night Noir Transmission",
-  description: "A forgotten late-night music transmission from a cave high above Gotham City. Retro noir lo-fi, dark jazz, and nocturnal atmospheric broadcasts.",
-  keywords: ["gotham", "noir", "retro music", "batman atmosphere", "1940s radio", "dark jazz"],
+  title: "WAYNE ACOUSTICS · Δ-1939 Batcave Tape Deck",
+  description: "A 1939 Gotham shortwave cassette tape deck broadcasting nocturnal rain ambient, Batcave drone, and dark synth ambient.",
 };
 
 export const viewport = {
@@ -23,6 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="bg-charcoal text-slate-100 antialiased selection:bg-crimson selection:text-white font-sans min-h-dvh flex flex-col">
         {children}
         <Analytics />

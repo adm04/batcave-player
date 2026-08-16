@@ -40,7 +40,7 @@ export default function Home() {
   }, [basePath]);
 
   return (
-    <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-between overflow-x-hidden bg-charcoal text-slate-100 antialiased">
+    <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden bg-charcoal text-slate-100 antialiased">
       {/* 1. Immersive Hero Background */}
       <div
         className="hero-bg -z-20 pointer-events-none"
@@ -55,7 +55,7 @@ export default function Home() {
       </div>
 
       {/* Dark Cinematic Gradient Overlay */}
-      <div className="fixed inset-0 -z-15 bg-gradient-to-b from-black/40 via-transparent to-black/85 pointer-events-none" />
+      <div className="fixed inset-0 -z-15 bg-gradient-to-b from-black/50 via-transparent to-black/90 pointer-events-none" />
 
       {/* 2. Pulp Film / Paper Grain Overlay */}
       <div
@@ -74,23 +74,23 @@ export default function Home() {
         currentPlaylistName={currentPlaylist.name}
       />
 
-      {/* Hero Headline / Station Identity */}
-      <div className="pt-20 sm:pt-24 pb-2 px-4 text-center z-10 pointer-events-none">
-        <div className="max-w-md mx-auto space-y-1">
-          <p className="font-mono text-[10px] sm:text-xs tracking-[0.35em] uppercase text-amber-glow/90 font-semibold drop-shadow">
+      {/* High Contrast Header Container */}
+      <div className="pt-20 sm:pt-24 pb-4 px-4 text-center z-10 pointer-events-none">
+        <div className="max-w-md mx-auto space-y-1 bg-black/60 p-3.5 sm:p-4 rounded-2xl border border-white/15 backdrop-blur-md shadow-2xl pointer-events-auto">
+          <p className="font-mono text-[10px] sm:text-xs tracking-[0.35em] uppercase text-amber-glow font-bold drop-shadow">
             GOTHAM SHORTWAVE TRANSMISSION // 1939
           </p>
           <h1 className="font-mono text-xl sm:text-3xl font-extrabold tracking-widest text-slate-100 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
             BATCAVE TAPE DECK
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300/80 font-sans italic drop-shadow">
-            "A barbershop & solitary vigilante shortwave deck, running live"
+          <p className="text-xs sm:text-sm text-slate-300 font-sans italic drop-shadow">
+            "A solitary vigilante shortwave tape deck, running live"
           </p>
         </div>
       </div>
 
-      {/* 4. Centerpiece Retro Tape Deck */}
-      <div className="w-full px-4 pb-12 z-20 flex flex-col items-center justify-center max-w-xl mx-auto">
+      {/* 4. Perfectly Centered Centerpiece Retro Tape Deck */}
+      <div className="w-full px-2 sm:px-4 pb-8 z-20 flex flex-col items-center justify-center max-w-xl mx-auto my-auto">
         <TapeDeck />
       </div>
 

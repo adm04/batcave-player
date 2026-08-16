@@ -590,7 +590,7 @@ export const TapeDeck: React.FC = () => {
               accept="audio/*"
               multiple
               onChange={handleFileUpload}
-              className="hidden"
+              style={{ display: 'none' }}
             />
           </label>
         </div>
