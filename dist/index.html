@@ -219,7 +219,7 @@
     font-weight:700;
     text-transform:uppercase;
     letter-spacing:.06em;
-    font-size:clamp(28px, 6vw, 40px);
+    font-size:clamp(24px, 6vw, 40px);
     color:var(--cream);
   }
   .brandline h1 span{ color:var(--bat-yellow); }
@@ -522,15 +522,36 @@
     font-family:var(--font-mono); font-size:9px; letter-spacing:.08em; color:#8a96a8;
   }
 
-  @media (max-width:520px){
-    .top-left-group { top: 12px; left: 14px; gap: 3px; }
+  /* ---------- RESPONSIVE MEDIA QUERIES ---------- */
+  @media (max-width:600px){
+    body { padding: 96px 12px 30px; }
+    .top-left-group { top: 12px; left: 12px; gap: 2px; }
     .clock-display { font-size: 24px; }
+    .date-display { font-size: 10.5px; }
+    .listener-pill, .credit-badge { padding: 3px 10px; font-size: 10px; }
+    .rig { gap: 16px; }
   }
 
-  @media (max-width:420px){
-    .tbtn{ width:44px; height:38px; }
-    .tbtn.play{ width:56px; height:46px; }
-    .reel{ width:48px; height:48px; }
+  @media (max-width:380px){
+    body { padding: 110px 8px 24px; }
+    .top-left-group { top: 10px; left: 10px; gap: 1px; }
+    .clock-display { font-size: 20px; }
+    .date-display { font-size: 9.5px; }
+    .listener-pill, .credit-badge { padding: 2px 8px; font-size: 9px; }
+    .deck { padding: 14px 10px 16px; border-radius: 14px; }
+    .cassette-window { padding: 12px 10px; }
+    .tape-body { padding: 12px 10px 8px; }
+    .reel { width: 40px; height: 40px; }
+    .tbtn { width: 40px; height: 36px; }
+    .tbtn.play { width: 48px; height: 42px; }
+    .tbtn svg { width: 14px; height: 14px; }
+    .tbtn.play svg { width: 16px; height: 16px; }
+    .lowerbar { gap: 10px; justify-content: space-between; }
+    .knob { width: 34px; height: 34px; }
+    .knob .tick { height: 7px; transform-origin: 1px 14px; }
+    .shelf-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .tape-card { padding: 6px 7px 8px; }
+    .tape-card .name { font-size: 11px; }
   }
 
   @media (prefers-reduced-motion: reduce){
