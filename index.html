@@ -103,6 +103,17 @@
     opacity:.5;
   }
 
+  /* Hidden YouTube Audio Iframe Element */
+  #yt-audio-player {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /* ---------- deck ---------- */
   .rig{
     position:relative; z-index:1;
@@ -444,6 +455,9 @@
 
 <div class="hero-bg"></div>
 
+<!-- Hidden YouTube Audio Iframe Element (audio only, no video shown) -->
+<div id="yt-audio-player"></div>
+
 <div class="sky" aria-hidden="true">
   <div class="stars"></div>
   <div class="beam-wrap"><div class="beam"></div></div>
@@ -541,6 +555,8 @@
 
 </div>
 
+<!-- Load YouTube Iframe API for audio playback -->
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 (function(){
   "use strict";
@@ -583,6 +599,25 @@
   let playing = false;
   let rafId = null;
   let mediaEl = null; // <audio> element for uploaded files
+  let ytPlayer = null;
+  let isYtReady = false;
+
+  window.onYouTubeIframeAPIReady = function() {
+    ytPlayer = new YT.Player('yt-audio-player', {
+      height: '1',
+      width: '1',
+      videoId: '03FC9nMhTf8',
+      playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0 },
+      events: {
+        onReady: function() { isYtReady = true; if(ytPlayer) ytPlayer.setVolume(volume * 100); },
+        onStateChange: function(event) {
+          if (event.data === YT.PlayerState.ENDED) {
+            loadTrack(currentIndex + 1, true);
+          }
+        }
+      }
+    });
+  };
 
   function ensureCtx(){
     if(!ctx){
@@ -613,7 +648,6 @@
     noise.connect(filter); filter.connect(gain); gain.connect(masterGain);
     noise.start();
 
-    // occasional low thunder swell
     const thunderTimer = setInterval(()=>{
       if(Math.random() < 0.35){
         const osc = ctx.createOscillator();
@@ -643,7 +677,6 @@
     osc1.connect(filter); osc2.connect(filter); filter.connect(gain); gain.connect(masterGain);
     osc1.start(t); osc2.start(t); lfo.start(t);
 
-    // occasional water-drip blip
     const dripTimer = setInterval(()=>{
       if(Math.random() < 0.4){
         const d = ctx.createOscillator(); d.type='sine';
@@ -673,7 +706,7 @@
     const delayOut = ctx.createGain(); delayOut.gain.value=0.5;
     delay.connect(delayOut); delayOut.connect(masterGain);
 
-    const scale = [220,261.6,293.7,329.6,392,440]; // A minor-ish
+    const scale = [220,261.6,293.7,329.6,392,440];
     let step = 0;
     const arpGain = ctx.createGain(); arpGain.gain.value=0.16;
     arpGain.connect(masterGain); arpGain.connect(delay);
@@ -698,17 +731,19 @@
   }
 
   const builtIn = [
-    { id:'rain',  name:'Gotham Rain',       cat:'SIDE A · AMBIENT', gen:genRain },
-    { id:'hum',   name:'Batcave Hum',       cat:'SIDE A · DRONE',   gen:genHum },
-    { id:'synth', name:'Night Patrol Synth',cat:'SIDE B · SYNTH',   gen:genSynth },
+    { id:'bat-song', name:'Gotham Patrol Track', cat:'SIDE A · FEATURED YOUTUBE', type:'youtube', ytid:'03FC9nMhTf8' },
+    { id:'rain',     name:'Gotham Rain',         cat:'SIDE A · AMBIENT',          type:'synth', gen:genRain },
+    { id:'hum',      name:'Batcave Hum',         cat:'SIDE A · DRONE',            type:'synth', gen:genHum },
+    { id:'synth',    name:'Night Patrol Synth',  cat:'SIDE B · SYNTH',            type:'synth', gen:genSynth },
   ];
-  const uploaded = []; // {id, name, cat, file}
+  const uploaded = [];
   let playlist = builtIn.slice();
   let currentIndex = 0;
 
   function stopCurrentSource(){
     if(currentStopFn){ try{ currentStopFn(); }catch(e){} currentStopFn = null; }
     if(mediaEl){ mediaEl.pause(); mediaEl.src=''; mediaEl = null; }
+    if(ytPlayer && typeof ytPlayer.pauseVideo === 'function'){ try{ ytPlayer.pauseVideo(); }catch(e){} }
   }
 
   function loadTrack(index, autoplay){
@@ -727,7 +762,12 @@
     if(!powered) return;
     ensureCtx();
     const track = playlist[currentIndex];
-    if(track.type === 'file'){
+    if(track.type === 'youtube'){
+      if(ytPlayer && typeof ytPlayer.loadVideoById === 'function'){
+        ytPlayer.loadVideoById(track.ytid);
+        ytPlayer.playVideo();
+      }
+    } else if(track.type === 'file'){
       if(!mediaEl){
         mediaEl = new Audio(track.url);
         mediaEl.loop = true;
@@ -748,6 +788,7 @@
 
   function pausePlayback(){
     if(mediaEl) mediaEl.pause();
+    if(ytPlayer && typeof ytPlayer.pauseVideo === 'function'){ try{ ytPlayer.pauseVideo(); }catch(e){} }
     playing = false;
     body.classList.remove('playing');
     playIcon.innerHTML = '<path d="M8 5v14l11-7z"></path>';
@@ -781,6 +822,10 @@
         for(let i=0;i<eqBars.length;i++){
           const v = dataArray[i % dataArray.length] / 255;
           eqBars[i].style.height = Math.max(6, v*100) + '%';
+        }
+      } else {
+        for(let i=0;i<eqBars.length;i++){
+          eqBars[i].style.height = (Math.random() * 80 + 10) + '%';
         }
       }
       rafId = requestAnimationFrame(tick);
@@ -828,6 +873,7 @@
   function setVolume(v){
     volume = Math.min(1, Math.max(0, v));
     if(masterGain) masterGain.gain.value = volume;
+    if(ytPlayer && typeof ytPlayer.setVolume === 'function') ytPlayer.setVolume(volume * 100);
     setVolumeVisual(volume);
   }
   volKnob.addEventListener('pointerdown', (e)=>{
