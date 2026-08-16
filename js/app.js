@@ -82,7 +82,6 @@
     try {
       const targetDate = new Date(Date.now() + timeOffsetMs);
 
-      // Native Intl formatting in Asia/Kolkata timezone
       const timeStr = targetDate.toLocaleTimeString('en-US', {
         timeZone: 'Asia/Kolkata',
         hour: 'numeric',
@@ -194,6 +193,8 @@
   let rafId = null;
   let mediaEl = null;
   let ytPlayer = null;
+  let ytPlayerReady = false;
+  let pendingPlay = false;
 
   const builtIn = [
     { id:'bat-song-main', name:'Gotham Main Patrol Theme', cat:'SIDE A · FEATURED YOUTUBE', type:'youtube', ytid:'fVeI5xcnsd8' },
@@ -207,39 +208,57 @@
   let playlist = builtIn.slice();
   let currentIndex = 0;
 
-  window.onYouTubeIframeAPIReady = function() {
-    ytPlayer = new YT.Player('yt-audio-player', {
-      height: '1',
-      width: '1',
-      videoId: 'fVeI5xcnsd8',
-      playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0 },
-      events: {
-        onReady: function() {
-          if(ytPlayer) {
-            ytPlayer.setVolume(volume * 100);
-            setPowered(true);
-            startPlayback();
-          }
-        },
-        onStateChange: function(event) {
-          if (event.data === YT.PlayerState.ENDED) {
-            loadTrack(currentIndex + 1, true);
+  function initYTPlayer() {
+    if (ytPlayer) return;
+    try {
+      ytPlayer = new YT.Player('yt-audio-player', {
+        height: '1',
+        width: '1',
+        videoId: builtIn[0].ytid,
+        playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 },
+        events: {
+          onReady: function(e) {
+            ytPlayerReady = true;
+            try { ytPlayer.setVolume(volume * 100); } catch(err){}
+            if (pendingPlay || powered) {
+              setPowered(true);
+              startPlayback();
+            }
+          },
+          onStateChange: function(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+              playing = true;
+              body.classList.add('playing');
+              playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"></rect><rect x="14" y="5" width="4" height="14"></rect>';
+              statusText.textContent = 'PLAYING';
+              startCounter();
+              startEQ();
+            } else if (event.data === YT.PlayerState.ENDED) {
+              loadTrack(currentIndex + 1, true);
+            }
           }
         }
-      }
-    });
+      });
+    } catch(e){}
+  }
+
+  window.onYouTubeIframeAPIReady = function() {
+    initYTPlayer();
   };
 
-  // Auto-start on first user click if browser policy blocked unmuted autoplay
+  if (window.YT && window.YT.Player) {
+    initYTPlayer();
+  }
+
+  // Auto-start on first user interaction if browser policy blocked audio
   let userInteracted = false;
   document.addEventListener('click', function autoStartOnFirstClick(){
     if(!userInteracted){
       userInteracted = true;
       if(!powered) setPowered(true);
       if(!playing) startPlayback();
-      document.removeEventListener('click', autoStartOnFirstClick);
     }
-  }, { once: true });
+  });
 
   function ensureCtx(){
     if(!ctx){
@@ -375,9 +394,13 @@
     ensureCtx();
     const track = playlist[currentIndex];
     if(track.type === 'youtube'){
-      if(ytPlayer && typeof ytPlayer.loadVideoById === 'function'){
-        ytPlayer.loadVideoById(track.ytid);
-        ytPlayer.playVideo();
+      if(ytPlayer && ytPlayerReady && typeof ytPlayer.loadVideoById === 'function'){
+        try {
+          ytPlayer.loadVideoById(track.ytid);
+          ytPlayer.playVideo();
+        } catch(e){ pendingPlay = true; }
+      } else {
+        pendingPlay = true;
       }
     } else if(track.type === 'file'){
       if(!mediaEl){
@@ -453,7 +476,7 @@
       body.classList.add('powered');
       ensureCtx();
       statusText.textContent = 'BOOTING…';
-      setTimeout(()=>{ if(powered) statusText.textContent = 'STANDBY'; }, 550);
+      setTimeout(()=>{ if(powered && !playing) statusText.textContent = 'STANDBY'; }, 550);
       if(!playlist.length) return;
       if(!trackTitleEl.querySelector('span').textContent || trackTitleEl.querySelector('span').textContent === '—'){
         loadTrack(currentIndex, false);
@@ -485,7 +508,9 @@
   function setVolume(v){
     volume = Math.min(1, Math.max(0, v));
     if(masterGain) masterGain.gain.value = volume;
-    if(ytPlayer && typeof ytPlayer.setVolume === 'function') ytPlayer.setVolume(volume * 100);
+    if(ytPlayer && typeof ytPlayer.setVolume === 'function') {
+      try { ytPlayer.setVolume(volume * 100); } catch(err){}
+    }
     setVolumeVisual(volume);
   }
   volKnob.addEventListener('pointerdown', (e)=>{
