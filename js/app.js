@@ -536,18 +536,17 @@
     function tick(){
       if(!playing){ rafId = null; eqBars.forEach(b=>b.style.height='6%'); return; }
       
-      let hasRealSignal = false;
-      if(analyser){
+      const currentTrack = playlist[currentIndex] || {};
+      let hasRealAudio = false;
+
+      if (currentTrack.type !== 'youtube' && analyser) {
         analyser.getByteFrequencyData(dataArray);
-        for(let i=0; i<dataArray.length; i++){
-          if(dataArray[i] > 0){
-            hasRealSignal = true;
-            break;
-          }
-        }
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        if (sum > 50) hasRealAudio = true;
       }
       
-      if(hasRealSignal){
+      if(hasRealAudio){
         for(let i=0; i<eqBars.length; i++){
           const v = dataArray[i % dataArray.length] / 255;
           eqBars[i].style.height = Math.max(6, Math.round(v * 100)) + '%';
