@@ -119,15 +119,23 @@
   updateISTDateTime();
 
   // ---------- Supabase Realtime Presence Live Listener Counter ----------
-  const SUPABASE_URL = 'https://your-project.supabase.co';
-  const SUPABASE_KEY = 'your-supabase-publishable-key';
+  const env = window.ENV || {};
+  const SUPABASE_URL = typeof env.SUPABASE_URL === 'string' ? env.SUPABASE_URL.trim() : '';
+  const SUPABASE_KEY = typeof env.SUPABASE_KEY === 'string' ? env.SUPABASE_KEY.trim() : '';
   let supabaseClient = null;
 
-  try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
+  const isConfigured = SUPABASE_URL && 
+                       SUPABASE_KEY && 
+                       !SUPABASE_URL.includes('YOUR_SUPABASE') && 
+                       !SUPABASE_KEY.includes('YOUR_SUPABASE');
+
+  if (isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch(e) {
+      console.warn('Supabase initialization failed:', e);
     }
-  } catch(e){}
+  }
 
   if (supabaseClient) {
     const listenerId = 'listener_' + Math.random().toString(36).substring(2, 9);
@@ -152,6 +160,12 @@
         await channel.track({ online_at: new Date().toISOString() });
       }
     });
+  } else {
+    // Graceful offline / unconfigured fallback counter
+    const el = document.getElementById('live-listeners');
+    if (el) {
+      el.innerText = '1 listening';
+    }
   }
 
   const body = document.body;
