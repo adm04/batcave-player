@@ -242,6 +242,8 @@
           onStateChange: function(event) {
             if (event.data === YT.PlayerState.PLAYING) {
               playing = true;
+              ytLastRawTime = 0;
+              ytLastAnchorTime = performance.now();
               body.classList.add('playing');
               playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"></rect><rect x="14" y="5" width="4" height="14"></rect>';
               statusText.textContent = 'PLAYING';
@@ -280,12 +282,58 @@
       masterGain = ctx.createGain();
       masterGain.gain.value = volume;
       analyser = ctx.createAnalyser();
-      analyser.fftSize = 64;
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.75;
       dataArray = new Uint8Array(analyser.frequencyBinCount);
       masterGain.connect(analyser);
       analyser.connect(ctx.destination);
     }
     if(ctx.state === 'suspended') ctx.resume();
+  }
+
+  // Continuous logarithmic fractional bin interpolation across 24 EQ bars
+  function getRealAudioSpectrum(dataArray) {
+    const numBins = dataArray.length;
+    const maxUseBin = Math.floor(numBins * 0.75);
+    const bars = new Array(EQ_BARS);
+
+    for (let i = 0; i < EQ_BARS; i++) {
+      const normIdx = Math.pow(i / (EQ_BARS - 1), 1.7) * (maxUseBin - 1);
+      const bLow = Math.floor(normIdx);
+      const bHigh = Math.min(numBins - 1, bLow + 1);
+      const frac = normIdx - bLow;
+
+      const val = dataArray[bLow] * (1 - frac) + dataArray[bHigh] * frac;
+      const eqCurve = 1.0 + Math.pow(i / (EQ_BARS - 1), 1.2) * 1.8;
+      const normalized = Math.min(1.0, (val / 255) * eqCurve);
+
+      bars[i] = normalized;
+    }
+    return bars;
+  }
+
+  let ytLastRawTime = 0;
+  let ytLastAnchorTime = 0;
+
+  function getExactPlaybackTime() {
+    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+      try {
+        const state = typeof ytPlayer.getPlayerState === 'function' ? ytPlayer.getPlayerState() : -1;
+        if (state === 1) { // YT.PlayerState.PLAYING
+          const raw = ytPlayer.getCurrentTime() || 0;
+          const now = performance.now();
+          if (raw !== ytLastRawTime) {
+            ytLastRawTime = raw;
+            ytLastAnchorTime = now;
+          }
+          return Math.max(0, ytLastRawTime + (now - ytLastAnchorTime) * 0.001);
+        }
+      } catch(e){}
+    }
+    if (playStartTime && playing) {
+      return Math.max(0, (Date.now() - playStartTime) * 0.001);
+    }
+    return 0;
   }
 
   // -- synthesized ambient generators --
@@ -464,100 +512,126 @@
   function stopCounter(){ if(counterInterval){ clearInterval(counterInterval); counterInterval=null; } }
 
   const YT_PROFILES = {
-    'fVeI5xcnsd8': { bpm: 124, bass: 0.95, mid: 0.85, high: 0.75 },
-    '03FC9nMhTf8': { bpm: 92,  bass: 0.85, mid: 0.75, high: 0.65 },
-    'zHCOLqsAvIA': { bpm: 135, bass: 1.00, mid: 0.90, high: 0.85 }
+    'fVeI5xcnsd8': { bpm: 112, offset: 0.15, bass: 0.95, mid: 0.85, high: 0.75 },
+    '03FC9nMhTf8': { bpm: 90,  offset: 0.10, bass: 0.85, mid: 0.75, high: 0.65 },
+    'zHCOLqsAvIA': { bpm: 124, offset: 0.05, bass: 1.00, mid: 0.90, high: 0.85 }
   };
 
   let playStartTime = 0;
 
   function computeSongMatchedBars() {
     const track = playlist[currentIndex] || {};
-    let t = 0;
-    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-      try { t = ytPlayer.getCurrentTime() || 0; } catch(e){}
-    }
-    if (!t && playStartTime) {
-      t = (Date.now() - playStartTime) * 0.001;
-    }
-    if (!t) {
-      t = (Date.now() * 0.001) % 300;
+    const t = getExactPlaybackTime();
+    if (t <= 0) {
+      return new Array(EQ_BARS).fill(0.06);
     }
 
-    const prof = YT_PROFILES[track.ytid] || { bpm: 120, bass: 0.9, mid: 0.8, high: 0.7 };
+    const prof = YT_PROFILES[track.ytid] || { bpm: 110, offset: 0, bass: 0.9, mid: 0.8, high: 0.7 };
+    const timeWithOffset = Math.max(0, t - prof.offset);
     const bps = prof.bpm / 60;
-    const beatPos = t * bps;
+    const beatPos = timeWithOffset * bps;
     const beatPhase = beatPos % 1;
 
-    // Kick drum impact on beat (decaying sharply)
-    const kickDrum = Math.pow(1 - beatPhase, 3.5) * prof.bass;
+    // Kick drum pulse (sharp attack on beat, exponential decay)
+    const kickDrum = Math.pow(Math.max(0, 1 - beatPhase * 1.5), 2.5) * prof.bass;
 
     // Snare drum backbeat (beats 2 & 4)
     const snarePos = (beatPos + 1) % 2;
-    const snareDrum = Math.pow(Math.max(0, 1 - snarePos * 1.8), 3) * prof.mid;
+    const snareDrum = Math.pow(Math.max(0, 1 - snarePos * 2.2), 2.8) * prof.mid;
 
-    // 16th note hi-hat tick
-    const hihatTick = Math.pow((t * bps * 4) % 1, 0.4) * prof.high;
+    // 16th-note hi-hat pulse
+    const hihatPhase = (beatPos * 4) % 1;
+    const hihatTick = Math.pow(Math.max(0, 1 - hihatPhase * 2.0), 2.0) * prof.high;
 
-    // Master volume knob scaling factor
-    const volScale = 0.3 + (volume * 0.7);
+    // Organic wave modulation for melody & synth dynamics
+    const bassMod = Math.sin(t * Math.PI * (bps / 2)) * 0.18 + 0.45;
+    const midMod = Math.cos(t * 3.7) * 0.2 + 0.45;
+    const highMod = Math.sin(t * 11.2) * 0.22 + 0.38;
 
     const bars = [];
     for (let i = 0; i < EQ_BARS; i++) {
-      let height = 0.06;
-      if (i < 7) {
-        // Sub-bass & Bass (Bars 0-6): Sub-bass slope + Kick Drum impact + Bassline modulation
-        const bassWave = Math.sin(t * Math.PI * bps + i * 0.3) * 0.25 + 0.55;
-        const kickBonus = kickDrum * (1 - (i / 7) * 0.3);
-        height = (bassWave * 0.4 + kickBonus * 0.6);
-      } else if (i < 17) {
-        // Mids (Bars 7-16): Snare + Chord harmonics + Synth melody sweep
-        const midIdx = (i - 7) / 10;
-        const chordHarmonic = Math.sin(t * 3.5 + midIdx * 5.0) * 0.3 + 0.45;
-        const melodySweep = Math.cos(beatPos * 1.57 + i * 0.4) * 0.25 + 0.25;
-        height = (chordHarmonic * 0.45 + melodySweep * 0.35 + snareDrum * 0.35);
+      let norm = 0.06;
+      if (i < 6) {
+        // Sub-bass & Bass (Bars 0-5)
+        const barIdx = i / 6;
+        const kickWeight = (1 - barIdx * 0.3);
+        const bassCurve = Math.sin(t * 2.5 + i * 0.4) * 0.15 + 0.4;
+        norm = kickDrum * kickWeight * 0.6 + bassCurve * 0.25 + bassMod * 0.15;
+      } else if (i < 16) {
+        // Mids (Bars 6-15)
+        const midIdx = (i - 6) / 10;
+        const snareWeight = 1 - Math.abs(midIdx - 0.4) * 1.2;
+        const melody = Math.sin(t * 4.8 + midIdx * 5.0) * 0.25 + 0.4;
+        norm = snareDrum * Math.max(0, snareWeight) * 0.4 + melody * 0.4 + midMod * 0.2;
       } else {
-        // Highs (Bars 17-23): Hi-hats + Shimmer + Percussion
-        const highIdx = (i - 17) / 7;
-        const highSlope = Math.pow(1 - highIdx, 0.6);
-        const shimmer = Math.sin(t * 12.0 + i * 1.2) * 0.2 + 0.3;
-        height = (hihatTick * 0.5 + shimmer * 0.5) * highSlope;
+        // Highs (Bars 16-23)
+        const highIdx = (i - 16) / 8;
+        const highSlope = 1 - highIdx * 0.4;
+        const shimmer = Math.sin(t * 15.0 + i * 1.3) * 0.2 + 0.35;
+        norm = (hihatTick * 0.5 + shimmer * 0.5) * highSlope * highMod;
       }
 
-      height = Math.max(0.06, Math.min(0.98, height * volScale));
-      bars.push(Math.round(height * 100));
+      const jitter = (Math.random() - 0.5) * 0.04;
+      norm = Math.max(0.06, Math.min(0.96, norm + jitter));
+      bars.push(norm);
     }
     return bars;
   }
+
+  const currentHeights = new Array(EQ_BARS).fill(6);
 
   function startEQ(){
     if(rafId) cancelAnimationFrame(rafId);
     rafId = null;
     function tick(){
-      if(!playing){ rafId = null; eqBars.forEach(b=>b.style.height='6%'); return; }
-      
+      if(!playing){
+        rafId = null;
+        for(let i=0; i<EQ_BARS; i++){
+          currentHeights[i] = currentHeights[i] * 0.75 + 6 * 0.25;
+          eqBars[i].style.height = Math.round(currentHeights[i]) + '%';
+        }
+        return;
+      }
+
       const currentTrack = playlist[currentIndex] || {};
       let hasRealAudio = false;
+      let realSpectrum = null;
 
       if (currentTrack.type !== 'youtube' && analyser) {
         analyser.getByteFrequencyData(dataArray);
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-        if (sum > 50) hasRealAudio = true;
+        if (sum > 20) {
+          hasRealAudio = true;
+          realSpectrum = getRealAudioSpectrum(dataArray);
+        }
       }
-      
-      if(hasRealAudio){
-        for(let i=0; i<eqBars.length; i++){
-          const v = dataArray[i % dataArray.length] / 255;
-          eqBars[i].style.height = Math.max(6, Math.round(v * 100)) + '%';
+
+      const targets = new Array(EQ_BARS);
+      const volScale = 0.35 + (volume * 0.65);
+
+      if (hasRealAudio && realSpectrum) {
+        for (let i = 0; i < EQ_BARS; i++) {
+          targets[i] = Math.max(6, Math.round(realSpectrum[i] * 100 * volScale));
         }
       } else {
-        // Dynamic song-matched beat-synchronized visualizer engine
         const songBars = computeSongMatchedBars();
-        for(let i=0; i<eqBars.length; i++){
-          eqBars[i].style.height = songBars[i] + '%';
+        for (let i = 0; i < EQ_BARS; i++) {
+          targets[i] = Math.max(6, Math.round(songBars[i] * 100 * volScale));
         }
       }
+
+      // Smooth physical attack & decay per bar
+      for (let i = 0; i < EQ_BARS; i++) {
+        const target = targets[i];
+        if (target > currentHeights[i]) {
+          currentHeights[i] = currentHeights[i] * 0.25 + target * 0.75;
+        } else {
+          currentHeights[i] = currentHeights[i] * 0.80 + target * 0.20;
+        }
+        eqBars[i].style.height = Math.round(currentHeights[i]) + '%';
+      }
+
       rafId = requestAnimationFrame(tick);
     }
     rafId = requestAnimationFrame(tick);

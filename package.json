@@ -1,6 +1,7 @@
 {
   "name": "batcave-player",
   "version": "1.0.0",
+  "description": "A retro-futuristic, skeuomorphic cassette tape deck player inspired by Gotham City and the Batcave.",
   "private": true,
   "scripts": {
     "deploy": "gh-pages -d dist --dotfiles"
