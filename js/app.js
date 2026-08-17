@@ -119,15 +119,23 @@
   updateISTDateTime();
 
   // ---------- Supabase Realtime Presence Live Listener Counter ----------
-  const SUPABASE_URL = 'https://qvvgiayrwagpcrluegot.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_F9-HQwvO02BIVwbgTmrY7w_Imb3fw9X';
+  const env = window.ENV || {};
+  const SUPABASE_URL = typeof env.SUPABASE_URL === 'string' ? env.SUPABASE_URL.trim() : '';
+  const SUPABASE_KEY = typeof env.SUPABASE_KEY === 'string' ? env.SUPABASE_KEY.trim() : '';
   let supabaseClient = null;
 
-  try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
+  const isConfigured = SUPABASE_URL && 
+                       SUPABASE_KEY && 
+                       !SUPABASE_URL.includes('YOUR_SUPABASE') && 
+                       !SUPABASE_KEY.includes('YOUR_SUPABASE');
+
+  if (isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch(e) {
+      console.warn('Supabase initialization failed:', e);
     }
-  } catch(e){}
+  }
 
   if (supabaseClient) {
     const listenerId = 'listener_' + Math.random().toString(36).substring(2, 9);
@@ -152,6 +160,12 @@
         await channel.track({ online_at: new Date().toISOString() });
       }
     });
+  } else {
+    // Graceful offline / unconfigured fallback counter
+    const el = document.getElementById('live-listeners');
+    if (el) {
+      el.innerText = '1 listening';
+    }
   }
 
   const body = document.body;
@@ -452,15 +466,35 @@
     if(rafId) return;
     function tick(){
       if(!playing){ rafId = null; eqBars.forEach(b=>b.style.height='6%'); return; }
+      
+      let hasRealSignal = false;
       if(analyser){
         analyser.getByteFrequencyData(dataArray);
-        for(let i=0;i<eqBars.length;i++){
+        for(let i=0; i<dataArray.length; i++){
+          if(dataArray[i] > 0){
+            hasRealSignal = true;
+            break;
+          }
+        }
+      }
+      
+      if(hasRealSignal){
+        for(let i=0; i<eqBars.length; i++){
           const v = dataArray[i % dataArray.length] / 255;
-          eqBars[i].style.height = Math.max(6, v*100) + '%';
+          eqBars[i].style.height = Math.max(6, Math.round(v * 100)) + '%';
         }
       } else {
-        for(let i=0;i<eqBars.length;i++){
-          eqBars[i].style.height = (Math.random() * 80 + 10) + '%';
+        // Dynamic rhythmic spectrum visualizer for YouTube cross-origin audio & streaming
+        const now = Date.now() * 0.003;
+        for(let i=0; i<eqBars.length; i++){
+          const freqWeight = Math.pow(1 - (i / eqBars.length), 0.45);
+          const wave1 = Math.sin(now * 4.2 + i * 0.45) * 0.35 + 0.35;
+          const wave2 = Math.cos(now * 8.5 - i * 0.3) * 0.25 + 0.25;
+          const wave3 = Math.sin(now * 2.1 + i * 0.15) * 0.2 + 0.2;
+          
+          let val = (wave1 * 0.45 + wave2 * 0.35 + wave3 * 0.20) * freqWeight;
+          val = Math.max(0.06, Math.min(0.95, val * 1.15));
+          eqBars[i].style.height = Math.round(val * 100) + '%';
         }
       }
       rafId = requestAnimationFrame(tick);

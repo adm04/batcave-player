@@ -51,10 +51,22 @@ Experience the Batcave Tape Deck live on GitHub Pages:
    cd batcave-player
    ```
 
-2. Open `index.html` in your browser or serve using a static web server:
+2. (Optional) Configure live presence listener credentials:
+   ```bash
+   cp js/config.example.js js/config.js
+   ```
+   Edit `js/config.js` with your Supabase URL and publishable key. If skipped, the player runs seamlessly in offline/fallback mode.
+
+3. Open `index.html` in your browser or serve using a static web server:
    ```bash
    npx serve .
    ```
+
+---
+
+## 🔒 Security
+
+For secret handling policies, client-side security guidelines, and reporting security vulnerabilities, please refer to [SECURITY.md](SECURITY.md).
 
 ---
 
