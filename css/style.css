@@ -381,7 +381,6 @@ body.powered .screen{ filter:brightness(1) saturate(1); }
   flex:1; background:linear-gradient(180deg, var(--amber), #7a5300);
   height:6%;
   border-radius:1px 1px 0 0;
-  transition:height .08s linear;
   box-shadow:0 0 4px rgba(255,183,3,.35);
 }
 .counter-row{

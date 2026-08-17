@@ -428,6 +428,7 @@
       if(!currentStopFn) currentStopFn = track.gen();
     }
     playing = true;
+    playStartTime = Date.now();
     body.classList.add('playing');
     playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"></rect><rect x="14" y="5" width="4" height="14"></rect>';
     statusText.textContent = 'PLAYING';
@@ -468,13 +469,20 @@
     'zHCOLqsAvIA': { bpm: 135, bass: 1.00, mid: 0.90, high: 0.85 }
   };
 
+  let playStartTime = 0;
+
   function computeSongMatchedBars() {
     const track = playlist[currentIndex] || {};
     let t = 0;
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
       try { t = ytPlayer.getCurrentTime() || 0; } catch(e){}
     }
-    if (!t) t = (Date.now() * 0.001) % 300;
+    if (!t && playStartTime) {
+      t = (Date.now() - playStartTime) * 0.001;
+    }
+    if (!t) {
+      t = (Date.now() * 0.001) % 300;
+    }
 
     const prof = YT_PROFILES[track.ytid] || { bpm: 120, bass: 0.9, mid: 0.8, high: 0.7 };
     const bps = prof.bpm / 60;
@@ -523,7 +531,8 @@
   }
 
   function startEQ(){
-    if(rafId) return;
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId = null;
     function tick(){
       if(!playing){ rafId = null; eqBars.forEach(b=>b.style.height='6%'); return; }
       
