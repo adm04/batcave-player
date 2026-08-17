@@ -462,6 +462,66 @@
   }
   function stopCounter(){ if(counterInterval){ clearInterval(counterInterval); counterInterval=null; } }
 
+  const YT_PROFILES = {
+    'fVeI5xcnsd8': { bpm: 124, bass: 0.95, mid: 0.85, high: 0.75 },
+    '03FC9nMhTf8': { bpm: 92,  bass: 0.85, mid: 0.75, high: 0.65 },
+    'zHCOLqsAvIA': { bpm: 135, bass: 1.00, mid: 0.90, high: 0.85 }
+  };
+
+  function computeSongMatchedBars() {
+    const track = playlist[currentIndex] || {};
+    let t = 0;
+    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+      try { t = ytPlayer.getCurrentTime() || 0; } catch(e){}
+    }
+    if (!t) t = (Date.now() * 0.001) % 300;
+
+    const prof = YT_PROFILES[track.ytid] || { bpm: 120, bass: 0.9, mid: 0.8, high: 0.7 };
+    const bps = prof.bpm / 60;
+    const beatPos = t * bps;
+    const beatPhase = beatPos % 1;
+
+    // Kick drum impact on beat (decaying sharply)
+    const kickDrum = Math.pow(1 - beatPhase, 3.5) * prof.bass;
+
+    // Snare drum backbeat (beats 2 & 4)
+    const snarePos = (beatPos + 1) % 2;
+    const snareDrum = Math.pow(Math.max(0, 1 - snarePos * 1.8), 3) * prof.mid;
+
+    // 16th note hi-hat tick
+    const hihatTick = Math.pow((t * bps * 4) % 1, 0.4) * prof.high;
+
+    // Master volume knob scaling factor
+    const volScale = 0.3 + (volume * 0.7);
+
+    const bars = [];
+    for (let i = 0; i < EQ_BARS; i++) {
+      let height = 0.06;
+      if (i < 7) {
+        // Sub-bass & Bass (Bars 0-6): Sub-bass slope + Kick Drum impact + Bassline modulation
+        const bassWave = Math.sin(t * Math.PI * bps + i * 0.3) * 0.25 + 0.55;
+        const kickBonus = kickDrum * (1 - (i / 7) * 0.3);
+        height = (bassWave * 0.4 + kickBonus * 0.6);
+      } else if (i < 17) {
+        // Mids (Bars 7-16): Snare + Chord harmonics + Synth melody sweep
+        const midIdx = (i - 7) / 10;
+        const chordHarmonic = Math.sin(t * 3.5 + midIdx * 5.0) * 0.3 + 0.45;
+        const melodySweep = Math.cos(beatPos * 1.57 + i * 0.4) * 0.25 + 0.25;
+        height = (chordHarmonic * 0.45 + melodySweep * 0.35 + snareDrum * 0.35);
+      } else {
+        // Highs (Bars 17-23): Hi-hats + Shimmer + Percussion
+        const highIdx = (i - 17) / 7;
+        const highSlope = Math.pow(1 - highIdx, 0.6);
+        const shimmer = Math.sin(t * 12.0 + i * 1.2) * 0.2 + 0.3;
+        height = (hihatTick * 0.5 + shimmer * 0.5) * highSlope;
+      }
+
+      height = Math.max(0.06, Math.min(0.98, height * volScale));
+      bars.push(Math.round(height * 100));
+    }
+    return bars;
+  }
+
   function startEQ(){
     if(rafId) return;
     function tick(){
@@ -484,17 +544,10 @@
           eqBars[i].style.height = Math.max(6, Math.round(v * 100)) + '%';
         }
       } else {
-        // Dynamic rhythmic spectrum visualizer for YouTube cross-origin audio & streaming
-        const now = Date.now() * 0.003;
+        // Dynamic song-matched beat-synchronized visualizer engine
+        const songBars = computeSongMatchedBars();
         for(let i=0; i<eqBars.length; i++){
-          const freqWeight = Math.pow(1 - (i / eqBars.length), 0.45);
-          const wave1 = Math.sin(now * 4.2 + i * 0.45) * 0.35 + 0.35;
-          const wave2 = Math.cos(now * 8.5 - i * 0.3) * 0.25 + 0.25;
-          const wave3 = Math.sin(now * 2.1 + i * 0.15) * 0.2 + 0.2;
-          
-          let val = (wave1 * 0.45 + wave2 * 0.35 + wave3 * 0.20) * freqWeight;
-          val = Math.max(0.06, Math.min(0.95, val * 1.15));
-          eqBars[i].style.height = Math.round(val * 100) + '%';
+          eqBars[i].style.height = songBars[i] + '%';
         }
       }
       rafId = requestAnimationFrame(tick);
